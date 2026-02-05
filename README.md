@@ -13,11 +13,6 @@ This workshop is a collaboration between LSEG (London Stock Exchange Group) and 
 ## 🎯 Workshop Objectives
 
 - Master C++ fundamentals and advanced features
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-=======
-=======
->>>>>>> Stashed changes
 - Understand high-performance computing principles
 - Learn SOLID principles and design patterns
 - Gain hands-on experience with concurrent programming
