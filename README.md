@@ -14,7 +14,10 @@ This workshop is a collaboration between LSEG (London Stock Exchange Group) and 
 
 - Master C++ fundamentals and advanced features
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 =======
+=======
+>>>>>>> Stashed changes
 - Understand high-performance computing principles
 - Learn SOLID principles and design patterns
 - Gain hands-on experience with concurrent programming
@@ -139,5 +142,9 @@ This repository is for educational purposes. Materials are based on the LSEG C++
 
 *Last Updated: February 2026*
 
+<<<<<<< Updated upstream
+**Note:** This is a living document and will be updated throughout the workshop as new materials are added.
+>>>>>>> Stashed changes
+=======
 **Note:** This is a living document and will be updated throughout the workshop as new materials are added.
 >>>>>>> Stashed changes
