@@ -23,19 +23,22 @@
 // --------------------------------------------------
 // Add the Function declaration (prototype) here
 
-
 // --------------------------------------------------
-int main() {
+int main()
+{
     int number = 5;
     bool success = false;
 
     int result = factorial(number, success);
 
-    if (success) {
+    if (success)
+    {
         std::cout << "Factorial of " << number
                   << " is " << result << std::endl;
         // Expected output: Factorial of 5 is 120
-    } else {
+    }
+    else
+    {
         std::cout << "Invalid input for factorial" << std::endl;
     }
 
@@ -44,6 +47,5 @@ int main() {
 
 // --------------------------------------------------
 // Add the Function definition here
-
 
 // how to run : g++ -o functionsExercise functionsExercise.cpp && ./functionsExercise

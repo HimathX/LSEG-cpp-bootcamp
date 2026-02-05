@@ -2,17 +2,20 @@
 
 // -------------------------------
 // Pass by VALUE
-void incrementByValue(int x) {
-    x = x + 1;   // modifies only the local copy
+void incrementByValue(int x)
+{
+    x = x + 1; // modifies only the local copy
 }
 
 // -------------------------------
 // Pass by REFERENCE
-void incrementByReference(int& x) {
-    x = x + 1;   // modifies the original variable
+void incrementByReference(int &x)
+{
+    x = x + 1; // modifies the original variable
 }
 
-int main() {
+int main()
+{
     int number = 10;
 
     std::cout << "Initial value: " << number << std::endl;

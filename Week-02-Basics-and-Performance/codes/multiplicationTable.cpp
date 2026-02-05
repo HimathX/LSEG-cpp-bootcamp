@@ -2,15 +2,18 @@
 
 // Write a program to generate the multiplication tables up to 12 x 12
 
-int main() {
+int main()
+{
 
     // Loop through numbers 1 to 12 (tables)
-    for (int i = 1; i <= 12; i++) {
+    for (int i = 1; i <= 12; i++)
+    {
 
         std::cout << "Multiplication table for " << i << ":\n";
 
         // Loop through numbers 1 to 12 (multipliers)
-        for (int j = 1; j <= 12; j++) {
+        for (int j = 1; j <= 12; j++)
+        {
             std::cout << i << " x " << j << " = " << (i * j) << "\n";
         }
 
