@@ -137,9 +137,4 @@ This repository is for educational purposes. Materials are based on the LSEG C++
 
 *Last Updated: February 2026*
 
-<<<<<<< Updated upstream
 **Note:** This is a living document and will be updated throughout the workshop as new materials are added.
->>>>>>> Stashed changes
-=======
-**Note:** This is a living document and will be updated throughout the workshop as new materials are added.
->>>>>>> Stashed changes
