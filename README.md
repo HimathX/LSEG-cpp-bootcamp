@@ -13,4 +13,3 @@ This workshop is a collaboration between LSEG (London Stock Exchange Group) and 
 ## 🎯 Workshop Objectives
 
 - Master C++ fundamentals and advanced features
-
