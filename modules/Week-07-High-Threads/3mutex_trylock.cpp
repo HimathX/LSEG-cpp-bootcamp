@@ -11,28 +11,27 @@ int main()
 
     mutex mtx;
 
-    auto func = [&](){
+    auto func = [&]()
+    {
         for (size_t i = 0; i < 100000; i++)
         {
-            if(mtx.try_lock())
+            if (mtx.try_lock())
             {
                 count++;
                 mtx.unlock();
-            } 
-        }   
+            }
+        }
     };
-    
 
     thread t1(func);
     thread t2(func);
     thread t3(func);
     thread t4(func);
-    
-    
+
     t1.join();
     t2.join();
     t3.join();
     t4.join();
-    std::cout<<"End"<<count<<endl;
+    std::cout << "End" << count << endl;
     cin.get();
 }

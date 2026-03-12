@@ -1,14 +1,17 @@
 #include <iostream>
 #include <chrono>
 
-void sumTask(long long N) {
+void sumTask(long long N)
+{
     long long s = 0;
-    for (long long i = 1; i <= N; ++i) {
+    for (long long i = 1; i <= N; ++i)
+    {
         s += i;
     }
 }
 
-int main() {
+int main()
+{
     const long long N = 200000000; // 200 million
 
     auto start = std::chrono::high_resolution_clock::now();
