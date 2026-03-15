@@ -233,7 +233,7 @@ All of Examples 1–6 produce correct output
 
 ## 8. Day-by-Day Timeline
 
-| Days | Dev 1 | Dev 2 (You) |
+| Days | Dev 1 (Janidu) | Dev 2 (Himath) |
 |---|---|---|
 | 1–2 | 🤝 Together: repo, structs, Order ID generator, folder structure | 🤝 Together |
 | 3–5 | CSV Reader (buffered), malformed row handling | Validator (all 6 rules), CSV Writer, timestamp |
