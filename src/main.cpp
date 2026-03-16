@@ -1,37 +1,90 @@
+#include <algorithm>
+#include <cstdint>
 #include <iostream>
-#include "CSVReader.h"
+#include <string>
+#include <utility>
+#include <vector>
 
-int main() {
+#include "CSVReader.h"
+#include "CSVWriter.h"
+#include "ExecutionReport.h"
+#include "OrderIDGenerator.h"
+#include "Validator.h"
+
+int main()
+{
     CSVReader reader;
-    
-    // 1. Capture the result
     CSVReadResult result = reader.readOrders("tests/sample_orders_7.csv");
 
-    // 2. Print Valid Orders
-    std::cout << "========== VALID ORDERS (" << result.validOrders.size() << ") ==========\n\n";
-    for (const auto& order : result.validOrders) {
-        std::cout << "Seq No:     " << order.seqNo << "\n"
-                  << "Client ID:  " << order.clientOrderID << "\n"
-                  << "Instrument: " << order.instrument << "\n"
-                  << "Side:       " << order.side << "\n"
-                  << "Quantity:   " << order.quantity << "\n"
-                  << "Price:      " << order.price << "\n"
-                  << "Timestamp:  " << (order.timestamp.empty() ? "N/A" : order.timestamp) << "\n"
-                  << "----------------------------------------\n\n";
+    // Collect all rejections paired with arrival sequence number for correct ordering.
+    std::vector<std::pair<std::uint64_t, ExecutionReport>> rejections;
+
+    // --- Parse rejects (CSVReader detected malformed / unparseable rows) ---
+    for (const auto &reject : result.parseRejects)
+    {
+        ExecutionReport rep;
+        rep.clientOrderID = reject.clientOrderId;
+        rep.instrument = reject.instrument;
+        rep.status = 1;
+        rep.reason = reject.reason;
+        try
+        {
+            rep.side = std::stoi(reject.sideText);
+        }
+        catch (...)
+        {
+            rep.side = 0;
+        }
+        try
+        {
+            rep.quantity = std::stoi(reject.quantityText);
+        }
+        catch (...)
+        {
+            rep.quantity = 0;
+        }
+        try
+        {
+            rep.price = std::stod(reject.priceText);
+        }
+        catch (...)
+        {
+            rep.price = 0.0;
+        }
+        rejections.emplace_back(reject.seqNum, std::move(rep));
     }
 
-    // 3. Print Rejected Orders
-    std::cout << "========== REJECTED ORDERS (" << result.parseRejects.size() << ") ==========\n\n";
-    for (const auto& reject : result.parseRejects) {
-        std::cout << "Seq Num:    " << reject.seqNum << "\n"
-                  << "Client ID:  " << reject.clientOrderId << "\n"
-                  << "Instrument: " << reject.instrument << "\n"
-                  << "Side text:  " << reject.sideText << "\n"
-                  << "Qty text:   " << reject.quantityText << "\n"
-                  << "Price text: " << reject.priceText << "\n"
-                  << "Reason:     " << reject.reason << "\n"
-                  << "----------------------------------------\n\n";
+    // --- Validation failures (well-formed rows that break business rules) ---
+    for (const auto &order : result.validOrders)
+    {
+        std::string reason = Validator::validate(order);
+        if (!reason.empty())
+        {
+            ExecutionReport rep;
+            rep.clientOrderID = order.clientOrderID;
+            rep.instrument = order.instrument;
+            rep.side = order.side;
+            rep.quantity = order.quantity;
+            rep.price = order.price;
+            rep.status = 1;
+            rep.reason = reason;
+            rejections.emplace_back(static_cast<std::uint64_t>(order.seqNo), std::move(rep));
+        }
+        // Passing orders will feed into OrderBook / MatchingEngine in Phase 3.
     }
 
+    // Sort by arrival sequence so Order IDs are assigned in time-priority order.
+    std::sort(rejections.begin(), rejections.end(),
+              [](const auto &a, const auto &b)
+              { return a.first < b.first; });
+
+    CSVWriter writer("execution_rep.csv");
+    for (auto &[seq, rep] : rejections)
+    {
+        rep.orderID = OrderIDGenerator::getNext();
+        writer.write(rep);
+    }
+
+    std::cout << "Done. " << rejections.size() << " rejection(s) written to execution_rep.csv\n";
     return 0;
 }

@@ -103,10 +103,10 @@ cpp-bootcamp/
 > Dev 1 leads CSV Reader. Dev 2 leads Validator + CSV Writer.
 
 #### CSV Reader (Dev 1 leads)
-- [ ] Read `orders.csv` line by line using buffered I/O (`std::ifstream` with buffer)
-- [ ] Parse each row into an `Order` struct
-- [ ] Handle malformed rows gracefully (missing columns, empty fields)
-- [ ] Assign arrival sequence number for time priority
+- [x] Read `orders.csv` line by line using buffered I/O (`std::ifstream` with buffer)
+- [x] Parse each row into an `Order` struct
+- [x] Handle malformed rows gracefully (missing columns, empty fields)
+- [x] Assign arrival sequence number for time priority
 
 #### Validator (Dev 2 leads)
 - [ ] Missing required field check
