@@ -1,6 +1,135 @@
 #include "CSVReader.h"
+#include <cctype>
 #include <fstream>
 #include <stdexcept>
+
+
+
+// Helper functions for parsing and validation
+namespace
+{
+constexpr std::size_t EXPECTED_FIELD_COUNT = 5;
+
+std::string trim(const std::string &value)
+{
+    std::size_t start = 0;
+    while (start < value.size() &&
+           std::isspace(static_cast<unsigned char>(value[start])))
+    {
+        ++start;
+    }
+
+    std::size_t end = value.size();
+    while (end > start &&
+           std::isspace(static_cast<unsigned char>(value[end - 1])))
+    {
+        --end;
+    }
+
+    return value.substr(start, end - start);
+}
+
+bool parseIntStrict(const std::string &text, int &value)
+{
+    std::size_t parsedLength = 0;
+
+    try
+    {
+        value = std::stoi(text, &parsedLength);
+    }
+    catch (const std::exception &)
+    {
+        return false;
+    }
+
+    return parsedLength == text.size();
+}
+
+bool parseDoubleStrict(const std::string &text, double &value)
+{
+    std::size_t parsedLength = 0;
+
+    try
+    {
+        value = std::stod(text, &parsedLength);
+    }
+    catch (const std::exception &)
+    {
+        return false;
+    }
+
+    return parsedLength == text.size();
+}
+
+std::vector<std::string> normalizeFields(const std::vector<std::string> &fields)
+{
+    std::vector<std::string> normalized(EXPECTED_FIELD_COUNT);
+
+    for (std::size_t i = 0; i < fields.size() && i < EXPECTED_FIELD_COUNT; ++i)
+    {
+        normalized[i] = fields[i];
+    }
+
+    return normalized;
+}
+
+std::vector<std::string> trimFieldsForValidation(const std::vector<std::string> &fields)
+{
+    std::vector<std::string> trimmed = fields;
+
+    for (std::size_t i = 0; i < trimmed.size(); ++i)
+    {
+        trimmed[i] = trim(trimmed[i]);
+    }
+
+    return trimmed;
+}
+
+std::string findRejectReason(const std::vector<std::string> &rawFields,
+                             const std::vector<std::string> &trimmedFields)
+{
+    if (trimmedFields[0].empty())
+    {
+        return "Invalid client order id";
+    }
+    if (trimmedFields[1].empty())
+    {
+        return "Invalid instrument";
+    }
+    if (trimmedFields[2].empty())
+    {
+        return "Invalid side";
+    }
+    if (trimmedFields[3].empty())
+    {
+        return "Invalid size";
+    }
+    if (trimmedFields[4].empty())
+    {
+        return "Invalid price";
+    }
+
+    int side = 0;
+    if (!parseIntStrict(trimmedFields[2], side))
+    {
+        return "Invalid side";
+    }
+
+    int quantity = 0;
+    if (!parseIntStrict(trimmedFields[3], quantity))
+    {
+        return "Invalid size";
+    }
+
+    double price = 0.0;
+    if (!parseDoubleStrict(trimmedFields[4], price))
+    {
+        return "Invalid price";
+    }
+
+    return "";
+}
+} // namespace
 
 std::vector<std::string> CSVReader::splitLine(const std::string &line)
 {
@@ -23,32 +152,23 @@ std::vector<std::string> CSVReader::splitLine(const std::string &line)
     return fields;
 }
 
-bool CSVReader::isMalformedRow(const std::vector<std::string> &fields) const
-{
-    if (fields.size() != 5)
-    {
-        return true; // A valid row must have exactly 5 fields
-    }
-    for (const auto &field : fields)
-    {
-        if (field.empty())
-        {
-            return true; // A valid row cannot have empty fields
-        }
-    }
-    return false; // The row is well-formed
-}
-
 Order CSVReader::parseOrder(const std::vector<std::string> &fields, std::uint64_t seqNum)
 {
     Order order;
+    int side = 0;
+    int quantity = 0;
+    double price = 0.0;
+
+    parseIntStrict(fields[2], side);
+    parseIntStrict(fields[3], quantity);
+    parseDoubleStrict(fields[4], price);
 
     order.clientOrderID = fields[0];
     order.instrument = fields[1];
-    order.side = std::stoi(fields[2]);
-    order.quantity = std::stoi(fields[3]);
-    order.price = std::stod(fields[4]);
-    order.seqNo = seqNum;
+    order.side = side;
+    order.quantity = quantity;
+    order.price = price;
+    order.seqNo = static_cast<int>(seqNum);
 
     return order;
 }
@@ -73,37 +193,27 @@ CSVReadResult CSVReader::readOrders(const std::string &fileName)
     while (std::getline(inFile, line))
     {
         auto fields = splitLine(line); // Split the line into fields
+        auto firstFiveRawFields = normalizeFields(fields);
+        auto firstFiveTrimmedFields = trimFieldsForValidation(firstFiveRawFields);
+        std::string rejectReason = findRejectReason(firstFiveRawFields, firstFiveTrimmedFields);
 
-        if (isMalformedRow(fields))
+        if (!rejectReason.empty())
         {
             ParseReject reject;
-            reject.clientOrderId = fields.size() > 0 ? fields[0] : "";
-            reject.instrument = fields.size() > 1 ? fields[1] : "";
-            reject.sideText = fields.size() > 2 ? fields[2] : "";
-            reject.quantityText = fields.size() > 3 ? fields[3] : "";
-            reject.priceText = fields.size() > 4 ? fields[4] : "";
+            reject.clientOrderId = firstFiveRawFields[0];
+            reject.instrument = firstFiveRawFields[1];
+            reject.sideText = firstFiveRawFields[2];
+            reject.quantityText = firstFiveRawFields[3];
+            reject.priceText = firstFiveRawFields[4];
+            reject.reason = rejectReason;
             reject.seqNum = seqNum++;
             result.parseRejects.push_back(reject); // Add to parse rejects if the row is malformed
         }
         else
         {
-            try
-            {
-                Order order = parseOrder(fields, seqNum++); // Parse the order and add to valid orders
-                result.validOrders.push_back(order);
-            }
-            catch (const std::exception &e)
-            {
-                ParseReject reject;
-                reject.clientOrderId = fields[0];
-                reject.instrument = fields[1];
-                reject.sideText = fields[2];
-                reject.quantityText = fields[3];
-                reject.priceText = fields[4];
-                reject.reason = "Invalid fields"; // All parse-level failures reported as Invalid fields
-                reject.seqNum = seqNum++;
-                result.parseRejects.push_back(reject); // Add to parse rejects if parsing fails
-            }
+            Order order = parseOrder(firstFiveTrimmedFields, seqNum++); // Parse the order and add to valid orders
+            order.hasExtraFields = fields.size() > EXPECTED_FIELD_COUNT;
+            result.validOrders.push_back(order);
         }
     }
 
