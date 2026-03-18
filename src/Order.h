@@ -8,5 +8,7 @@ struct Order {
     double price;
     int quantity;
     std::string timestamp; // YYYYMMDD-HHMMSS.sss
-    int seqNo; // Priority order based on time
+    int seqNo; // Priority order based on time  
+
+    bool hasExtraFields = false; //Added to track if the order has more fields than expected, which is a validation failure in Phase 2
 };

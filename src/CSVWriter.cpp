@@ -42,14 +42,27 @@ std::string CSVWriter::generateTimestamp() const
 
 void CSVWriter::write(const ExecutionReport &report)
 {
+    const std::string sideText = report.sideText.has_value() ? *report.sideText : std::to_string(report.side);
+    const std::string quantityText = report.quantityText.has_value() ? *report.quantityText : std::to_string(report.quantity);
+
+    std::ostringstream priceStream;
+    if (report.priceText.has_value())
+    {
+        priceStream << *report.priceText;
+    }
+    else
+    {
+        priceStream << std::fixed << std::setprecision(2) << report.price;
+    }
+
     std::ostringstream row;
     row << report.orderID << ','
         << report.clientOrderID << ','
         << report.instrument << ','
-        << report.side << ','
+        << sideText << ','
         << report.status << ','
-        << report.quantity << ','
-        << std::fixed << std::setprecision(2) << report.price << ','
+        << quantityText << ','
+        << priceStream.str() << ','
         << report.reason << ','
         << generateTimestamp() << '\n';
     buffer_ += row.str();

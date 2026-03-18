@@ -27,30 +27,9 @@ int main()
         rep.instrument = reject.instrument;
         rep.status = 1;
         rep.reason = reject.reason;
-        try
-        {
-            rep.side = std::stoi(reject.sideText);
-        }
-        catch (...)
-        {
-            rep.side = 0;
-        }
-        try
-        {
-            rep.quantity = std::stoi(reject.quantityText);
-        }
-        catch (...)
-        {
-            rep.quantity = 0;
-        }
-        try
-        {
-            rep.price = std::stod(reject.priceText);
-        }
-        catch (...)
-        {
-            rep.price = 0.0;
-        }
+        rep.sideText = reject.sideText;
+        rep.quantityText = reject.quantityText;
+        rep.priceText = reject.priceText;
         rejections.emplace_back(reject.seqNum, std::move(rep));
     }
 
@@ -68,6 +47,20 @@ int main()
             rep.price = order.price;
             rep.status = 1;
             rep.reason = reason;
+            rejections.emplace_back(static_cast<std::uint64_t>(order.seqNo), std::move(rep));
+        }
+
+        //Handle the case where an order has more fields than expected, which is a validation failure in Phase 2
+        else if (order.hasExtraFields)
+        {
+            ExecutionReport rep;
+            rep.clientOrderID = order.clientOrderID;
+            rep.instrument = order.instrument;
+            rep.side = order.side;
+            rep.quantity = order.quantity;
+            rep.price = order.price;
+            rep.status = 1;
+            rep.reason = "Extra field";
             rejections.emplace_back(static_cast<std::uint64_t>(order.seqNo), std::move(rep));
         }
         // Passing orders will feed into OrderBook / MatchingEngine in Phase 3.

@@ -13,7 +13,7 @@ struct ParseReject
     std::string sideText;
     std::string quantityText;
     std::string priceText;
-    std::string reason = "Invalid fields";
+    std::string reason;
     std::uint64_t seqNum = 0;
 };
 
@@ -34,6 +34,5 @@ private:
     std::vector<std::string> splitLine(const std::string &line); // Split one CSV rwo into fields
 
     Order parseOrder(const std::vector<std::string> &fields, std::uint64_t seqNum); // Convert a vector of strings into an Order object
-
-    bool isMalformedRow(const std::vector<std::string> &fields) const; // Check if a row has the correct number of fields and valid data types
 };
+
