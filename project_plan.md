@@ -109,18 +109,18 @@ cpp-bootcamp/
 - [x] Assign arrival sequence number for time priority
 
 #### Validator (Dev 2 leads)
-- [ ] Missing required field check
-- [ ] Invalid instrument check (must be one of 5 types)
-- [ ] Invalid side check (must be 1 or 2)
-- [ ] Price > 0 check
-- [ ] Quantity must be multiple of 10
-- [ ] Quantity must be between 10 and 1000 (inclusive)
-- [ ] On failure: immediately write `Rejected` execution report with reason string
+- [x] Missing required field check
+- [x] Invalid instrument check (must be one of 5 types)
+- [x] Invalid side check (must be 1 or 2)
+- [x] Price > 0 check
+- [x] Quantity must be multiple of 10
+- [x] Quantity must be between 10 and 1000 (inclusive)
+- [x] On failure: immediately write `Rejected` execution report with reason string
 
 #### CSV Writer (Dev 2 leads)
-- [ ] Write execution reports to `execution_rep.csv`
-- [ ] Implement timestamp in `YYYYMMDD-HHMMSS.sss` format using `<chrono>`
-- [ ] Use buffered writes — do not flush after every line
+- [x] Write execution reports to `execution_rep.csv`
+- [x] Implement timestamp in `YYYYMMDD-HHMMSS.sss` format using `<chrono>`
+- [x] Use buffered writes — do not flush after every line
 
 #### ✅ Phase 2 Done When:
 Running Example 7 (input validations) produces the exact expected `exec_rep.csv`
@@ -130,14 +130,14 @@ Running Example 7 (input validations) produces the exact expected `exec_rep.csv`
 ### Phase 3 — Order Book & Matching Engine (Days 6–10)
 > This is the hardest phase. Both developers work on it together.
 
-#### Order Book (Dev 1 leads)
-- [ ] Create 5 separate `OrderBook` instances (one per instrument)
-- [ ] Buy side: sorted by price descending (highest price = highest priority)
-- [ ] Sell side: sorted by price ascending (lowest price = highest priority)
-- [ ] Time priority: orders at same price sorted by arrival sequence number
-- [ ] Recommended structure: `std::map<double, std::queue<Order>>` per side
+#### Order Book (Dev 2 leads)
+- [x] Create 5 separate `OrderBook` instances (one per instrument)
+- [x] Buy side: sorted by price descending (highest price = highest priority)
+- [x] Sell side: sorted by price ascending (lowest price = highest priority)
+- [x] Time priority: orders at same price sorted by arrival sequence number
+- [x] Recommended structure: `std::map<double, std::queue<Order>>` per side
 
-#### Matching Engine (Dev 2 leads — especially PFill + Example 5)
+#### Matching Engine (Dev 1 leads — especially PFill + Example 5)
 - [ ] On new order arrival, check if it can match against opposite side
 - [ ] **Passive order (no match):** Add to book, output status `0 - New`
 - [ ] **Aggressive order — Full match (Fill):** Remove resting order from book, output `2 - Fill` for both sides

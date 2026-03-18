@@ -3,132 +3,130 @@
 #include <fstream>
 #include <stdexcept>
 
-
-
 // Helper functions for parsing and validation
 namespace
 {
-constexpr std::size_t EXPECTED_FIELD_COUNT = 5;
+    constexpr std::size_t EXPECTED_FIELD_COUNT = 5;
 
-std::string trim(const std::string &value)
-{
-    std::size_t start = 0;
-    while (start < value.size() &&
-           std::isspace(static_cast<unsigned char>(value[start])))
+    std::string trim(const std::string &value)
     {
-        ++start;
+        std::size_t start = 0;
+        while (start < value.size() &&
+               std::isspace(static_cast<unsigned char>(value[start])))
+        {
+            ++start;
+        }
+
+        std::size_t end = value.size();
+        while (end > start &&
+               std::isspace(static_cast<unsigned char>(value[end - 1])))
+        {
+            --end;
+        }
+
+        return value.substr(start, end - start);
     }
 
-    std::size_t end = value.size();
-    while (end > start &&
-           std::isspace(static_cast<unsigned char>(value[end - 1])))
+    bool parseIntStrict(const std::string &text, int &value)
     {
-        --end;
+        std::size_t parsedLength = 0;
+
+        try
+        {
+            value = std::stoi(text, &parsedLength);
+        }
+        catch (const std::exception &)
+        {
+            return false;
+        }
+
+        return parsedLength == text.size();
     }
 
-    return value.substr(start, end - start);
-}
-
-bool parseIntStrict(const std::string &text, int &value)
-{
-    std::size_t parsedLength = 0;
-
-    try
+    bool parseDoubleStrict(const std::string &text, double &value)
     {
-        value = std::stoi(text, &parsedLength);
-    }
-    catch (const std::exception &)
-    {
-        return false;
-    }
+        std::size_t parsedLength = 0;
 
-    return parsedLength == text.size();
-}
+        try
+        {
+            value = std::stod(text, &parsedLength);
+        }
+        catch (const std::exception &)
+        {
+            return false;
+        }
 
-bool parseDoubleStrict(const std::string &text, double &value)
-{
-    std::size_t parsedLength = 0;
-
-    try
-    {
-        value = std::stod(text, &parsedLength);
-    }
-    catch (const std::exception &)
-    {
-        return false;
+        return parsedLength == text.size();
     }
 
-    return parsedLength == text.size();
-}
-
-std::vector<std::string> normalizeFields(const std::vector<std::string> &fields)
-{
-    std::vector<std::string> normalized(EXPECTED_FIELD_COUNT);
-
-    for (std::size_t i = 0; i < fields.size() && i < EXPECTED_FIELD_COUNT; ++i)
+    std::vector<std::string> normalizeFields(const std::vector<std::string> &fields)
     {
-        normalized[i] = fields[i];
+        std::vector<std::string> normalized(EXPECTED_FIELD_COUNT);
+
+        for (std::size_t i = 0; i < fields.size() && i < EXPECTED_FIELD_COUNT; ++i)
+        {
+            normalized[i] = fields[i];
+        }
+
+        return normalized;
     }
 
-    return normalized;
-}
+    std::vector<std::string> trimFieldsForValidation(const std::vector<std::string> &fields)
+    {
+        std::vector<std::string> trimmed = fields;
 
-std::vector<std::string> trimFieldsForValidation(const std::vector<std::string> &fields)
-{
-    std::vector<std::string> trimmed = fields;
+        for (std::size_t i = 0; i < trimmed.size(); ++i)
+        {
+            trimmed[i] = trim(trimmed[i]);
+        }
 
-    for (std::size_t i = 0; i < trimmed.size(); ++i)
-    {
-        trimmed[i] = trim(trimmed[i]);
-    }
-
-    return trimmed;
-}
-
-std::string findRejectReason(const std::vector<std::string> &rawFields,
-                             const std::vector<std::string> &trimmedFields)
-{
-    if (trimmedFields[0].empty())
-    {
-        return "Invalid client order id";
-    }
-    if (trimmedFields[1].empty())
-    {
-        return "Invalid instrument";
-    }
-    if (trimmedFields[2].empty())
-    {
-        return "Invalid side";
-    }
-    if (trimmedFields[3].empty())
-    {
-        return "Invalid size";
-    }
-    if (trimmedFields[4].empty())
-    {
-        return "Invalid price";
+        return trimmed;
     }
 
-    int side = 0;
-    if (!parseIntStrict(trimmedFields[2], side))
+    std::string findRejectReason(const std::vector<std::string> &rawFields,
+                                 const std::vector<std::string> &trimmedFields)
     {
-        return "Invalid side";
-    }
+        if (trimmedFields[0].empty())
+        {
+            return "Invalid client order id";
+        }
+        if (trimmedFields[1].empty())
+        {
+            return "Invalid instrument";
+        }
+        if (trimmedFields[2].empty())
+        {
+            return "Invalid side";
+        }
+        if (trimmedFields[3].empty())
+        {
+            return "Invalid size";
+        }
+        if (trimmedFields[4].empty())
+        {
+            return "Invalid price";
+        }
 
-    int quantity = 0;
-    if (!parseIntStrict(trimmedFields[3], quantity))
-    {
-        return "Invalid size";
-    }
+        int side = 0;
+        if (!parseIntStrict(trimmedFields[2], side))
+        {
+            return "Invalid side";
+        }
 
-    double price = 0.0;
-    if (!parseDoubleStrict(trimmedFields[4], price))
-    {
-        return "Invalid price";
-    }
+        int quantity = 0;
+        if (!parseIntStrict(trimmedFields[3], quantity))
+        {
+            return "Invalid size";
+        }
 
-    return "";
-}
+        double price = 0.0;
+        if (!parseDoubleStrict(trimmedFields[4], price))
+        {
+            return "Invalid price";
+        }
+
+        return "";
+    }
 } // namespace
 
 std::vector<std::string> CSVReader::splitLine(const std::string &line)

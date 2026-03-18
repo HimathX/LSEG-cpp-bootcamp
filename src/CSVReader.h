@@ -35,4 +35,3 @@ private:
 
     Order parseOrder(const std::vector<std::string> &fields, std::uint64_t seqNum); // Convert a vector of strings into an Order object
 };
-

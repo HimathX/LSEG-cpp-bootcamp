@@ -2,7 +2,8 @@
 #include <optional>
 #include <string>
 
-struct ExecutionReport {
+struct ExecutionReport
+{
     std::string orderID;
     std::string clientOrderID;
     std::string instrument;
@@ -12,7 +13,7 @@ struct ExecutionReport {
     int status = 0; // 0=New, 1=Rejected, 2=Fill, 3=PFill
     std::string reason;
     std::string transactionTime; // YYYYMMDD-HHMMSS.sss
-    
+
     std::optional<std::string> sideText;
     std::optional<std::string> quantityText;
     std::optional<std::string> priceText;
