@@ -1,20 +1,23 @@
-# Create a comprehensive C++ .gitignore
-@"
-# Compiled Object files
+## Ignore build artifacts and editor temp files
+
+# Compiled object files
 *.o
 *.obj
+
+# Assembly/source output
+*.s
 
 # Executables
 *.exe
 *.out
 *.app
 
-# Compiled Dynamic libraries
+# Compiled dynamic libraries
 *.so
 *.dylib
 *.dll
 
-# Compiled Static libraries
+# Compiled static libraries
 *.a
 *.lib
 
@@ -24,7 +27,7 @@
 *.idb
 *.pdb
 
-# Visual Studio files
+# Visual Studio
 *.vcxproj.user
 *.sln.docstates
 .vs/
@@ -49,4 +52,6 @@ Makefile
 build/
 bin/
 obj/
-"@ | Set-Content -Path ".gitignore"
+
+# Misc
+*.log
