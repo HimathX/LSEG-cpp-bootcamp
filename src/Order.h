@@ -2,6 +2,7 @@
 #include <string>
 
 struct Order {
+    std::string orderID;
     std::string clientOrderID;
     std::string instrument;
     int side; // 1 for Buy, 2 for Sell

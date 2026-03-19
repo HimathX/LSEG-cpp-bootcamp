@@ -1,8 +1,9 @@
 #include "MatchingEngine.h"
 #include <stdexcept>
+#include <algorithm> // For std::min
 #include "OrderIDGenerator.h"
 
-MatchingEngine::MatchingEngine(const std::string& engineName)
+MatchingEngine::MatchingEngine(const std::string &engineName)
     : engine_(engineName)
 {
     orderBooks_.emplace("Rose", OrderBook("Rose"));
@@ -12,40 +13,109 @@ MatchingEngine::MatchingEngine(const std::string& engineName)
     orderBooks_.emplace("Orchid", OrderBook("Orchid"));
 }
 
-std::vector<ExecutionReport> MatchingEngine::MatchOrder(const Order& order)
+std::vector<ExecutionReport> MatchingEngine::MatchOrder(const Order &orderInput)
 {
-    OrderBook& orderBook = getOrderBook(order.instrument);
-    const bool oppositeSideHasOrders = (order.side == 1) ? orderBook.hasSellOrders()
-                                                         : orderBook.hasBuyOrders();
+    Order order = orderInput;
+    std::vector<ExecutionReport> reports;
+    OrderBook &orderBook = getOrderBook(order.instrument);
 
-    // If Opposite site has orders check whether agressives passive then matching criteria
-    if (oppositeSideHasOrders)
+    // 1. Generate the System ID immediately
+    order.orderID = OrderIDGenerator::getNext();
+
+    // 2. THE MATCHING LOOP
+    bool oppositeSideHasOrders = (order.side == 1) ? orderBook.hasSellOrders() : orderBook.hasBuyOrders();
+
+    while (order.quantity > 0 && oppositeSideHasOrders)
     {
-        throw std::logic_error("Matching logic not implemented yet"); //Aggressive passive criteria
-       // to be implemented here
+        // Get the best available resting order
+        std::queue<Order> &bestQueue = (order.side == 1) ? orderBook.getBestSellQueue() : orderBook.getBestBuyQueue();
+        Order &restingOrder = bestQueue.front();
+
+        // Check if prices actually overlap
+        bool priceMatches = false;
+        if (order.side == 1)
+        {
+            priceMatches = (order.price >= restingOrder.price); // Buyer pays >= cheapest sell price
+        }
+        else
+        {
+            priceMatches = (order.price <= restingOrder.price); // Seller sells <= highest buy price
+        }
+
+        if (!priceMatches)
+        {
+            break; // Prices don't overlap, stop matching
+        }
+
+        // --- WE HAVE A MATCH ---
+
+        int tradeQty = std::min(order.quantity, restingOrder.quantity);
+        double executionPrice = restingOrder.price; // THE EXAMPLE 5 RULE
+
+        // Update quantities
+        restingOrder.quantity -= tradeQty;
+        order.quantity -= tradeQty;
+
+        int restingStatus = (restingOrder.quantity == 0) ? 2 : 3; // 2=Fill, 3=PFill
+        int aggressiveStatus = (order.quantity == 0) ? 2 : 3;
+
+        // Report for RESTING Order
+        ExecutionReport restingReport;
+        restingReport.orderID = restingOrder.orderID;
+        restingReport.clientOrderID = restingOrder.clientOrderID;
+        restingReport.instrument = restingOrder.instrument;
+        restingReport.side = restingOrder.side;
+        restingReport.status = restingStatus;
+        restingReport.quantity = tradeQty;
+        restingReport.price = executionPrice;
+        reports.push_back(restingReport);
+
+        // Report for AGGRESSIVE Order
+        ExecutionReport aggressiveReport;
+        aggressiveReport.orderID = order.orderID;
+        aggressiveReport.clientOrderID = order.clientOrderID;
+        aggressiveReport.instrument = order.instrument;
+        aggressiveReport.side = order.side;
+        aggressiveReport.status = aggressiveStatus;
+        aggressiveReport.quantity = tradeQty;
+        aggressiveReport.price = executionPrice;
+        reports.push_back(aggressiveReport);
+
+        // Clean up empty resting order
+        if (restingOrder.quantity == 0)
+        {
+            bestQueue.pop();
+            orderBook.removeEmptyPriceLevels();
+        }
+
+        oppositeSideHasOrders = (order.side == 1) ? orderBook.hasSellOrders() : orderBook.hasBuyOrders();
     }
 
-    orderBook.addOrder(order); // Has to be matched correctly because if orders get filled they do not go to orderbook
+    // 3. RESTING THE REMAINDER (Passive)
+    if (order.quantity > 0)
+    {
+        orderBook.addOrder(order);
 
-    ExecutionReport report;
-    report.orderID = OrderIDGenerator::getNext();
-    report.clientOrderID = order.clientOrderID;
-    report.instrument = order.instrument;
-    report.side = order.side;
-    report.price = order.price;
-    report.quantity = order.quantity;
-    report.status = 0;
+        ExecutionReport newReport;
+        newReport.orderID = order.orderID;
+        newReport.clientOrderID = order.clientOrderID;
+        newReport.instrument = order.instrument;
+        newReport.side = order.side;
+        newReport.status = 0; // 0 - New
+        newReport.quantity = order.quantity;
+        newReport.price = order.price;
+        reports.push_back(newReport);
+    }
 
-    return {report};
+    return reports;
 }
 
-OrderBook& MatchingEngine::getOrderBook(const std::string& instrument)
+OrderBook &MatchingEngine::getOrderBook(const std::string &instrument)
 {
     auto it = orderBooks_.find(instrument);
     if (it == orderBooks_.end())
     {
         throw std::invalid_argument("Unknown instrument: " + instrument);
     }
-
     return it->second;
 }

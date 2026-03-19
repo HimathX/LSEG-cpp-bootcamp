@@ -1,0 +1,1 @@
+g++ -O3 -std=c++17 src/main.cpp src/CSVReader.cpp src/CSVWriter.cpp src/OrderBook.cpp src/MatchingEngine.cpp src/Validator.cpp src/OrderIDGenerator.cpp -o exchange
