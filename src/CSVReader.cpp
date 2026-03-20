@@ -27,6 +27,7 @@ namespace
         return value.substr(start, end - start);
     }
 
+    // Parsing functions to ensure that the entire string is a valid integer or double, without any extra characters
     bool parseIntStrict(const std::string &text, int &value)
     {
         std::size_t parsedLength = 0;
@@ -85,7 +86,9 @@ namespace
 
     std::string findRejectReason(const std::vector<std::string> &rawFields,
                                  const std::vector<std::string> &trimmedFields)
+                                 
     {
+        //Cascading validation checks for each field, returning the first encountered error reason
         if (trimmedFields[0].empty())
         {
             return "Invalid client order id";
