@@ -1,4 +1,4 @@
-import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Button } from "@heroui/react";
+import { Button } from "@heroui/react";
 import { Download } from "lucide-react";
 
 export interface ExecutionReport {
@@ -84,46 +84,42 @@ export function ExecutionBlotter({ reports }: ExecutionBlotterProps) {
         </Button>
       </div>
 
-      <Table 
-        aria-label="Execution Report Blotter"
-        className="max-h-[400px] bg-zinc-900 border border-white/10 p-0 shadow-xl"
-      >
-        <TableHeader className="bg-black/40 text-slate-400 font-semibold tracking-wider text-xs border-b border-white/10">
-          <TableColumn>TIME</TableColumn>
-          <TableColumn>ORDER ID</TableColumn>
-          <TableColumn>CLIENT ID</TableColumn>
-          <TableColumn>INSTRUMENT</TableColumn>
-          <TableColumn>SIDE</TableColumn>
-          <TableColumn className="text-right">QTY</TableColumn>
-          <TableColumn className="text-right">PRICE</TableColumn>
-          <TableColumn>STATUS</TableColumn>
-        </TableHeader>
-        <TableBody>
-          {reports.length === 0 ? (
-            <TableRow>
-              <TableCell>...</TableCell>
-              <TableCell>...</TableCell>
-              <TableCell>...</TableCell>
-              <TableCell>No execution reports available.</TableCell>
-              <TableCell>...</TableCell>
-              <TableCell>...</TableCell>
-              <TableCell>...</TableCell>
-              <TableCell>...</TableCell>
-            </TableRow>
-          ) : reports.map((report) => (
-            <TableRow key={report.orderId} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors font-mono text-sm group">
-              <TableCell className="text-slate-500 text-xs py-3">{report.transactionTime}</TableCell>
-              <TableCell className="text-slate-300 py-3">{report.orderId}</TableCell>
-              <TableCell className="text-slate-400 py-3">{report.clientOrderId}</TableCell>
-              <TableCell className="font-sans font-medium text-slate-200 py-3">{report.instrument}</TableCell>
-              <TableCell className="py-3">{getSideText(report.side)}</TableCell>
-              <TableCell className="text-right text-slate-300 py-3">{report.quantity}</TableCell>
-              <TableCell className="text-right text-slate-300 py-3">{report.price.toFixed(2)}</TableCell>
-              <TableCell className="py-3">{getStatusChip(report.status, report.reason)}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <div className="w-full overflow-x-auto rounded-xl border border-white/10 bg-zinc-900 shadow-xl max-h-[400px]">
+        <table className="w-full text-left border-collapse">
+          <thead className="bg-black/40 text-slate-400 font-semibold tracking-wider text-xs border-b border-white/10 sticky top-0 z-10 backdrop-blur-md">
+            <tr>
+              <th className="py-3 px-4 font-semibold">TIME</th>
+              <th className="py-3 px-4 font-semibold">ORDER ID</th>
+              <th className="py-3 px-4 font-semibold">CLIENT ID</th>
+              <th className="py-3 px-4 font-semibold">INSTRUMENT</th>
+              <th className="py-3 px-4 font-semibold">SIDE</th>
+              <th className="py-3 px-4 font-semibold text-right">QTY</th>
+              <th className="py-3 px-4 font-semibold text-right">PRICE</th>
+              <th className="py-3 px-4 font-semibold">STATUS</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-white/5">
+            {reports.length === 0 ? (
+              <tr className="border-b border-white/5/0">
+                <td colSpan={8} className="py-8 text-center text-slate-500 text-sm">
+                  No execution reports available.
+                </td>
+              </tr>
+            ) : reports.map((report) => (
+              <tr key={report.orderId} className="hover:bg-white/5 transition-colors font-mono text-sm group">
+                <td className="text-slate-500 text-xs py-3 px-4 whitespace-nowrap">{report.transactionTime}</td>
+                <td className="text-slate-300 py-3 px-4">{report.orderId}</td>
+                <td className="text-slate-400 py-3 px-4">{report.clientOrderId}</td>
+                <td className="font-sans font-medium text-slate-200 py-3 px-4">{report.instrument}</td>
+                <td className="py-3 px-4">{getSideText(report.side)}</td>
+                <td className="text-right text-slate-300 py-3 px-4">{report.quantity}</td>
+                <td className="text-right text-slate-300 py-3 px-4">{report.price.toFixed(2)}</td>
+                <td className="py-3 px-4">{getStatusChip(report.status, report.reason)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
