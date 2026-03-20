@@ -1,0 +1,11 @@
+@import "tailwindcss";
+@import "@heroui/styles";
+
+@theme {
+  --color-success: #10b981;
+  --color-danger: #f43f5e;
+}
+
+body {
+  @apply bg-slate-950 text-slate-50 antialiased;
+}
