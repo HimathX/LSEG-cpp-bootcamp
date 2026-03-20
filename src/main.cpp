@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <chrono>
 #include <cstdint>
 #include <iostream>
 #include <string>
@@ -22,8 +23,10 @@ struct ProcessEvent {
 
 int main(int argc, char* argv[])
 {
+    const auto startTime = std::chrono::steady_clock::now();
+
     // Default to the official input file name unless overridden by command line
-    std::string inputFile = "orders.csv";
+    std::string inputFile = "tests/sample_orders_7.csv";
     if (argc > 1) {
         inputFile = argv[1];
     }
@@ -68,7 +71,7 @@ int main(int argc, char* argv[])
 
     // Initialize the core components
     MatchingEngine engine("FlowerExchange");
-    CSVWriter writer("execution_rep.csv");
+    CSVWriter writer("execution_rep_7.csv");
 
     int processedCount = 0;
     int rejectCount = 0;
@@ -153,6 +156,10 @@ int main(int argc, char* argv[])
     std::cout << "Total rejected rows  : " << rejectCount << "\n";
     std::cout << "Total valid orders   : " << matchEventCount << "\n";
     std::cout << "Output saved to execution_rep.csv\n";
+    const auto endTime = std::chrono::steady_clock::now();
+    const auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+        endTime - startTime);
+    std::cout << "Elapsed time         : " << elapsedMs.count() << " ms\n";
 
     return 0;
 }
