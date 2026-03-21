@@ -26,7 +26,7 @@ int main(int argc, char* argv[])
     const auto startTime = std::chrono::steady_clock::now();
 
     // Default to the official input file name unless overridden by command line
-    std::string inputFile = "tests/sample_orders_7.csv";
+    std::string inputFile = "tests/sample_orders_6.csv";
     if (argc > 1) {
         inputFile = argv[1];
     }
@@ -71,7 +71,7 @@ int main(int argc, char* argv[])
 
     // Initialize the core components
     MatchingEngine engine("FlowerExchange");
-    CSVWriter writer("execution_rep_7.csv");
+    CSVWriter writer("execution_rep_6.csv");
 
     int processedCount = 0;
     int rejectCount = 0;
