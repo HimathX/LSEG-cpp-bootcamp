@@ -1,4 +1,6 @@
-import { Card, CardContent, CardHeader, Separator as Divider } from "@heroui/react";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Separator } from "@/components/ui/separator";
 
 export interface OrderLevel {
   price: number;
@@ -25,36 +27,37 @@ export function OrderBook({ instrument, bids, asks }: OrderBookProps) {
   const displayAsks = padLevels(asks);
 
   return (
-    <Card className="bg-zinc-900 border border-white/10 w-full min-w-[200px]">
-      <CardHeader className="py-2 px-3 flex justify-center bg-black/40">
-        <h3 className="text-sm font-bold tracking-wide text-slate-300 uppercase">
+    <Card className="w-full min-w-[200px] border-border bg-card">
+      <CardHeader className="py-2 px-3 flex justify-center items-center bg-muted/50">
+        <h3 className="text-sm font-bold tracking-wide text-foreground uppercase">
           {instrument}
         </h3>
       </CardHeader>
-      <Divider className="bg-white/10" />
+      <Separator />
       <CardContent className="p-0">
-        <div className="grid grid-cols-2 text-xs text-center border-b border-white/5 bg-black/20">
-          <div className="py-1 text-success font-semibold tracking-wide">BID</div>
-          <div className="py-1 text-danger font-semibold tracking-wide border-l border-white/5">ASK</div>
-        </div>
-        
-        <div className="flex flex-col font-mono text-sm leading-tight">
-          {displayBids.map((bid, i) => {
-            const ask = displayAsks[i];
-            return (
-              <div key={i} className="grid grid-cols-2 text-center border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
-                <div className="py-1.5 flex justify-between px-2">
-                  <span className="text-slate-500">{bid.qty > 0 ? bid.qty : "-"}</span>
-                  <span className={bid.price > 0 ? "text-success" : "text-slate-600"}>{bid.price > 0 ? bid.price.toFixed(2) : "-"}</span>
-                </div>
-                <div className="py-1.5 border-l border-white/5 flex justify-between px-2">
-                  <span className={ask.price > 0 ? "text-danger" : "text-slate-600"}>{ask.price > 0 ? ask.price.toFixed(2) : "-"}</span>
-                  <span className="text-slate-500">{ask.qty > 0 ? ask.qty : "-"}</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <Table className="max-w-full font-mono text-sm leading-none">
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="h-8 text-center text-green-500 font-semibold w-1/4 px-1">QTY</TableHead>
+              <TableHead className="h-8 text-center text-green-500 font-semibold w-1/4 px-1 border-r border-border">BID</TableHead>
+              <TableHead className="h-8 text-center text-red-500 font-semibold w-1/4 px-1">ASK</TableHead>
+              <TableHead className="h-8 text-center text-red-500 font-semibold w-1/4 px-1">QTY</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {displayBids.map((bid, i) => {
+              const ask = displayAsks[i];
+              return (
+                <TableRow key={i} className="border-b last:border-0 hover:bg-muted/50 transition-colors h-7">
+                  <TableCell className="py-1 px-2 text-center text-muted-foreground">{bid.qty > 0 ? bid.qty : "-"}</TableCell>
+                  <TableCell className="py-1 px-2 text-center border-r border-border font-medium text-green-500">{bid.price > 0 ? bid.price.toFixed(2) : "-"}</TableCell>
+                  <TableCell className="py-1 px-2 text-center font-medium text-red-500">{ask.price > 0 ? ask.price.toFixed(2) : "-"}</TableCell>
+                  <TableCell className="py-1 px-2 text-center text-muted-foreground">{ask.qty > 0 ? ask.qty : "-"}</TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
       </CardContent>
     </Card>
   );

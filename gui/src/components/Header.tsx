@@ -10,24 +10,24 @@ export function Header() {
   }, []);
 
   return (
-    <header className="flex items-center justify-between px-6 py-3 border-b border-white/10 bg-black/20 backdrop-blur-md">
+    <header className="flex items-center justify-between px-6 py-3 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex items-center gap-4">
-        <h1 className="text-xl font-bold tracking-widest text-slate-100">
+        <h1 className="text-xl font-bold tracking-widest text-foreground">
           FLOWER EXCHANGE TERMINAL
         </h1>
       </div>
       
       <div className="flex items-center gap-6">
-        <div className="flex items-center gap-2 text-slate-300">
-          <Clock size={16} className="text-success" />
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Clock size={16} className="text-green-500" />
           <span className="font-mono text-sm tracking-wider">
             {time.toLocaleTimeString("en-US", { hour12: false })}
           </span>
         </div>
         
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-success animate-pulse shadow-[0_0_8px_#10b981]" />
-          <span className="text-xs font-semibold tracking-wide text-slate-400 uppercase">
+          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_#22c55e]" />
+          <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
             System Online
           </span>
         </div>

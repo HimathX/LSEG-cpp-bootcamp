@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { Card, CardContent as CardBody, Button, Input } from "@heroui/react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Upload, Play, Loader2 } from "lucide-react";
 
 interface UploadSectionProps {
@@ -28,8 +30,8 @@ export function UploadSection({ onRunComplete }: UploadSectionProps) {
   };
 
   return (
-    <Card className="bg-zinc-900 border border-white/10">
-      <CardBody className="flex flex-col md:flex-row gap-4 items-center justify-between p-6">
+    <Card className="bg-zinc-900 border-white/10">
+      <CardContent className="flex flex-col md:flex-row gap-4 items-center justify-between p-6">
         <div className="flex-1 w-full">
           <h2 className="text-lg font-semibold text-slate-200 mb-2 flex items-center gap-2">
             <Upload size={18} className="text-slate-400" />
@@ -44,7 +46,7 @@ export function UploadSection({ onRunComplete }: UploadSectionProps) {
               type="file" 
               accept=".csv"
               onChange={(e) => setFile(e.target.files?.[0] || null)}
-              className="text-sm"
+              className="text-sm bg-zinc-900 text-slate-200 border-white/10"
             />
           </div>
         </div>
@@ -52,9 +54,9 @@ export function UploadSection({ onRunComplete }: UploadSectionProps) {
         <div className="flex shrink-0">
           <Button
             size="lg"
-            className="font-bold tracking-wide shadow-lg min-w-[200px] bg-blue-600 text-white"
+            className="font-bold tracking-wide shadow-lg min-w-[200px] bg-blue-600 hover:bg-blue-700 text-white"
             onClick={handleRunEngine}
-            isDisabled={isRunning}
+            disabled={isRunning}
           >
             {isRunning ? (
               <span className="flex items-center gap-2">
@@ -69,7 +71,7 @@ export function UploadSection({ onRunComplete }: UploadSectionProps) {
             )}
           </Button>
         </div>
-      </CardBody>
+      </CardContent>
     </Card>
   );
 }

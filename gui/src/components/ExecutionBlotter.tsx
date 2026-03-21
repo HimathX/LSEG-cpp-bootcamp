@@ -1,5 +1,7 @@
-import { Button } from "@heroui/react";
 import { Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 
 export interface ExecutionReport {
   orderId: string;
@@ -22,26 +24,26 @@ export function ExecutionBlotter({ reports }: ExecutionBlotterProps) {
   const getStatusChip = (status: number, reason?: string) => {
     switch (status) {
       case 0:
-        return <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-400 border border-blue-500/30">New</span>;
+        return <Badge variant="outline" className="bg-blue-500/10 text-blue-500 hover:bg-blue-500/20">New</Badge>;
       case 1:
         return (
-          <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-500/20 text-rose-400 border border-rose-500/30 cursor-help" title={reason || "Unknown reason"}>
+          <Badge variant="destructive" className="cursor-help" title={reason || "Unknown reason"}>
             Rejected
-          </span>
+          </Badge>
         );
       case 2:
-        return <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500 text-black">Fill</span>;
+        return <Badge className="bg-green-500 text-green-950 hover:bg-green-600">Fill</Badge>;
       case 3:
-        return <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500 text-black">PFill</span>;
+        return <Badge variant="secondary" className="bg-amber-500 text-amber-950 hover:bg-amber-600">PFill</Badge>;
       default:
-        return <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-500/20 text-slate-400">Unknown</span>;
+        return <Badge variant="outline">Unknown</Badge>;
     }
   };
 
   const getSideText = (side: number) => {
     return side === 1 
-      ? <span className="text-success font-bold">BUY</span> 
-      : <span className="text-danger font-bold">SELL</span>;
+      ? <span className="text-green-500 font-bold">BUY</span> 
+      : <span className="text-red-500 font-bold">SELL</span>;
   };
 
   const handleDownload = () => {
@@ -67,58 +69,57 @@ export function ExecutionBlotter({ reports }: ExecutionBlotterProps) {
     <div className="flex flex-col gap-4">
       <div className="flex justify-between items-end">
         <div>
-          <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
+          <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
             Execution Blotter
-            <span className="text-xs font-normal text-slate-400 bg-white/5 px-2 py-0.5 rounded-full">
+            <Badge variant="secondary" className="font-normal">
               {reports.length} Records
-            </span>
+            </Badge>
           </h2>
         </div>
         <Button 
           size="sm" 
           variant="outline" 
-          className="border border-white/10"
           onClick={handleDownload}
         >
-          <Download size={14} /> Download Report
+          <Download className="mr-2 h-4 w-4" /> Download Report
         </Button>
       </div>
 
-      <div className="w-full overflow-x-auto rounded-xl border border-white/10 bg-zinc-900 shadow-xl max-h-[400px]">
-        <table className="w-full text-left border-collapse">
-          <thead className="bg-black/40 text-slate-400 font-semibold tracking-wider text-xs border-b border-white/10 sticky top-0 z-10 backdrop-blur-md">
-            <tr>
-              <th className="py-3 px-4 font-semibold">TIME</th>
-              <th className="py-3 px-4 font-semibold">ORDER ID</th>
-              <th className="py-3 px-4 font-semibold">CLIENT ID</th>
-              <th className="py-3 px-4 font-semibold">INSTRUMENT</th>
-              <th className="py-3 px-4 font-semibold">SIDE</th>
-              <th className="py-3 px-4 font-semibold text-right">QTY</th>
-              <th className="py-3 px-4 font-semibold text-right">PRICE</th>
-              <th className="py-3 px-4 font-semibold">STATUS</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-white/5">
+      <div className="w-full overflow-x-auto rounded-xl border border-border bg-card shadow-sm max-h-[400px]">
+        <Table>
+          <TableHeader className="sticky top-0 z-10 bg-muted/90 backdrop-blur-md">
+            <TableRow>
+              <TableHead className="py-3 px-4">TIME</TableHead>
+              <TableHead className="py-3 px-4">ORDER ID</TableHead>
+              <TableHead className="py-3 px-4">CLIENT ID</TableHead>
+              <TableHead className="py-3 px-4">INSTRUMENT</TableHead>
+              <TableHead className="py-3 px-4">SIDE</TableHead>
+              <TableHead className="py-3 px-4 text-right">QTY</TableHead>
+              <TableHead className="py-3 px-4 text-right">PRICE</TableHead>
+              <TableHead className="py-3 px-4">STATUS</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {reports.length === 0 ? (
-              <tr className="border-b border-white/5/0">
-                <td colSpan={8} className="py-8 text-center text-slate-500 text-sm">
+              <TableRow>
+                <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
                   No execution reports available.
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ) : reports.map((report) => (
-              <tr key={report.orderId} className="hover:bg-white/5 transition-colors font-mono text-sm group">
-                <td className="text-slate-500 text-xs py-3 px-4 whitespace-nowrap">{report.transactionTime}</td>
-                <td className="text-slate-300 py-3 px-4">{report.orderId}</td>
-                <td className="text-slate-400 py-3 px-4">{report.clientOrderId}</td>
-                <td className="font-sans font-medium text-slate-200 py-3 px-4">{report.instrument}</td>
-                <td className="py-3 px-4">{getSideText(report.side)}</td>
-                <td className="text-right text-slate-300 py-3 px-4">{report.quantity}</td>
-                <td className="text-right text-slate-300 py-3 px-4">{report.price.toFixed(2)}</td>
-                <td className="py-3 px-4">{getStatusChip(report.status, report.reason)}</td>
-              </tr>
+              <TableRow key={report.orderId} className="font-mono text-sm group">
+                <TableCell className="text-muted-foreground">{report.transactionTime}</TableCell>
+                <TableCell>{report.orderId}</TableCell>
+                <TableCell className="text-muted-foreground">{report.clientOrderId}</TableCell>
+                <TableCell className="font-sans font-medium">{report.instrument}</TableCell>
+                <TableCell>{getSideText(report.side)}</TableCell>
+                <TableCell className="text-right">{report.quantity}</TableCell>
+                <TableCell className="text-right">{report.price.toFixed(2)}</TableCell>
+                <TableCell>{getStatusChip(report.status, report.reason)}</TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

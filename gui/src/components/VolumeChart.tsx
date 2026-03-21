@@ -1,4 +1,4 @@
-import { Card, CardHeader, CardContent as CardBody } from "@heroui/react";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 interface VolumeData {
@@ -15,13 +15,13 @@ export function VolumeChart({ data }: VolumeChartProps) {
   const colors = ["#3b82f6", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981"];
 
   return (
-    <Card className="bg-zinc-900 border border-white/10 w-full h-[300px]">
-      <CardHeader className="py-3 px-4 flex justify-between items-center bg-black/20 border-b border-white/5">
-        <h3 className="text-sm font-bold tracking-wide text-slate-300 uppercase">
+    <Card className="border-border bg-card w-full h-[300px]">
+      <CardHeader className="py-3 px-4 flex justify-between items-center bg-muted/50 border-b border-border">
+        <h3 className="text-sm font-bold tracking-wide text-foreground uppercase">
           Market Volume
         </h3>
       </CardHeader>
-      <CardBody className="p-4">
+      <CardContent className="p-4">
         <div className="w-full h-full min-h-[200px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
@@ -53,7 +53,7 @@ export function VolumeChart({ data }: VolumeChartProps) {
             </BarChart>
           </ResponsiveContainer>
         </div>
-      </CardBody>
+      </CardContent>
     </Card>
   );
 }
