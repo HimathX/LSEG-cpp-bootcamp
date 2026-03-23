@@ -24,7 +24,7 @@ std::vector<ExecutionReport> MatchingEngine::MatchOrder(const Order &orderInput)
 
     // 2. THE MATCHING LOOP
     bool oppositeSideHasOrders = (order.side == 1) ? orderBook.hasSellOrders() : orderBook.hasBuyOrders();
-
+    bool isAggressive = false;
     while (order.quantity > 0 && oppositeSideHasOrders)
     {
         // Get the best available resting order
@@ -41,6 +41,8 @@ std::vector<ExecutionReport> MatchingEngine::MatchOrder(const Order &orderInput)
         {
             priceMatches = (order.price <= restingOrder.price); // Seller sells <= highest buy price
         }
+
+        isAggressive = isAggressive || priceMatches; // Once we have a price match, we consider the order aggressive
 
         if (!priceMatches)
         {
@@ -59,17 +61,6 @@ std::vector<ExecutionReport> MatchingEngine::MatchOrder(const Order &orderInput)
         int restingStatus = (restingOrder.quantity == 0) ? 2 : 3; // 2=Fill, 3=PFill
         int aggressiveStatus = (order.quantity == 0) ? 2 : 3;
 
-        // Report for RESTING Order
-        ExecutionReport restingReport;
-        restingReport.orderID = restingOrder.orderID;
-        restingReport.clientOrderID = restingOrder.clientOrderID;
-        restingReport.instrument = restingOrder.instrument;
-        restingReport.side = restingOrder.side;
-        restingReport.status = restingStatus;
-        restingReport.quantity = tradeQty;
-        restingReport.price = executionPrice;
-        reports.push_back(restingReport);
-
         // Report for AGGRESSIVE Order
         ExecutionReport aggressiveReport;
         aggressiveReport.orderID = order.orderID;
@@ -80,6 +71,17 @@ std::vector<ExecutionReport> MatchingEngine::MatchOrder(const Order &orderInput)
         aggressiveReport.quantity = tradeQty;
         aggressiveReport.price = executionPrice;
         reports.push_back(aggressiveReport);
+
+        // Report for RESTING Order
+        ExecutionReport restingReport;
+        restingReport.orderID = restingOrder.orderID;
+        restingReport.clientOrderID = restingOrder.clientOrderID;
+        restingReport.instrument = restingOrder.instrument;
+        restingReport.side = restingOrder.side;
+        restingReport.status = restingStatus;
+        restingReport.quantity = tradeQty;
+        restingReport.price = executionPrice;
+        reports.push_back(restingReport);
 
         // Clean up empty resting order
         if (restingOrder.quantity == 0)
@@ -92,19 +94,24 @@ std::vector<ExecutionReport> MatchingEngine::MatchOrder(const Order &orderInput)
     }
 
     // 3. RESTING THE REMAINDER (Passive)
+    // If there's any quantity left, add it to the book as a new resting order
+    // But Example 6 in slide says we should not add the remainder to the book, so we will skip this step for now. We can easily add it back later if needed.
     if (order.quantity > 0)
     {
         orderBook.addOrder(order);
-
-        ExecutionReport newReport;
-        newReport.orderID = order.orderID;
-        newReport.clientOrderID = order.clientOrderID;
-        newReport.instrument = order.instrument;
-        newReport.side = order.side;
-        newReport.status = 0; // 0 - New
-        newReport.quantity = order.quantity;
-        newReport.price = order.price;
-        reports.push_back(newReport);
+        if (!isAggressive)
+        {
+            ExecutionReport newReport;
+            newReport.orderID = order.orderID;
+            newReport.clientOrderID = order.clientOrderID;
+            newReport.instrument = order.instrument;
+            newReport.side = order.side;
+            newReport.status = 0; // 0 - New
+            newReport.quantity = order.quantity;
+            newReport.price = order.price;
+            reports.push_back(newReport);
+        }
+        
     }
 
     return reports;
