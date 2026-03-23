@@ -3,17 +3,33 @@
 #include <string>
 #include "ExecutionReport.h"
 
-class CSVWriter
+class BufferedCSVWriter
 {
 public:
-    explicit CSVWriter(const std::string &filename);
-    ~CSVWriter(); // flushes accumulated buffer to disk
-
-    void write(const ExecutionReport &report);
+    BufferedCSVWriter(const std::string &filename, const std::string &header);
+    ~BufferedCSVWriter(); // flushes accumulated buffer to disk
 
 private:
     std::ofstream outFile_;
     std::string buffer_;
 
+protected:
+    void appendRow(const std::string &row);
     std::string generateTimestamp() const;
+};
+
+class ExecutionReportCSVWriter : private BufferedCSVWriter
+{
+public:
+    explicit ExecutionReportCSVWriter(const std::string &filename);
+
+    void write(const ExecutionReport &report);
+};
+
+class RejectedExecutionReportCSVWriter:private BufferedCSVWriter
+{
+public:
+    explicit RejectedExecutionReportCSVWriter(const std::string &filename);
+
+    void write(const RejectedExecutionReport &report);
 };

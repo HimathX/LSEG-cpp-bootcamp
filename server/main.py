@@ -18,7 +18,8 @@ app.add_middleware(
 # Paths to your engine and data files
 ENGINE_PATH = os.path.abspath("../exchange.exe")
 INPUT_FILE = "orders.csv"
-OUTPUT_FILE = "execution_rep.csv"
+SUCCESS_OUTPUT_FILE = "execution_rep.csv"
+REJECTED_OUTPUT_FILE = "rejected_execution_rep.csv"
 
 @app.post("/api/execute")
 async def execute_matching_engine(file: UploadFile = File(...)):
@@ -39,19 +40,27 @@ async def execute_matching_engine(file: UploadFile = File(...)):
             check=True
         )
 
-        # 3. Check if the engine generated the execution report
-        if not os.path.exists(OUTPUT_FILE):
+        # 3. Check if the engine generated both execution reports
+        if not os.path.exists(SUCCESS_OUTPUT_FILE):
             raise HTTPException(status_code=500, detail="Engine failed to generate execution_rep.csv")
 
-        # 4. Read the report data
-        with open(OUTPUT_FILE, "r") as f:
-            csv_content = f.read()
+        if not os.path.exists(REJECTED_OUTPUT_FILE):
+            raise HTTPException(status_code=500, detail="Engine failed to generate rejected_execution_rep.csv")
 
-        # 5. Return the summary (stdout) and the raw CSV data to the frontend
+        # 4. Read both report files
+        with open(SUCCESS_OUTPUT_FILE, "r") as f:
+            execution_csv_content = f.read()
+
+        with open(REJECTED_OUTPUT_FILE, "r") as f:
+            rejected_csv_content = f.read()
+
+        # 5. Return the summary (stdout) and both raw CSV outputs to the frontend
         return {
             "success": True,
             "summary": result.stdout, # The counts you print in your C++ main.cpp
-            "data": csv_content
+            "data": execution_csv_content,
+            "executionData": execution_csv_content,
+            "rejectedData": rejected_csv_content,
         }
 
     except subprocess.CalledProcessError as e:

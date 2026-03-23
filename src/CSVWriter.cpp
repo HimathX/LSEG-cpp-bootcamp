@@ -5,10 +5,20 @@
 #include <sstream>
 #include <stdexcept>
 
-// 4MB buffer limit to prevent RAM spikes during large file evaluations
-constexpr size_t MAX_BUFFER_SIZE = 4 * 1024 * 1024;
+namespace
+{
+    // 4MB buffer limit to prevent RAM spikes during large file evaluations
+    constexpr size_t MAX_BUFFER_SIZE = 4 * 1024 * 1024;
 
-CSVWriter::CSVWriter(const std::string &filename)
+    std::string formatPrice(double price)
+    {
+        std::ostringstream priceStream;
+        priceStream << std::fixed << std::setprecision(2) << price;
+        return priceStream.str();
+    }
+} // namespace
+
+BufferedCSVWriter::BufferedCSVWriter(const std::string &filename, const std::string &header)
 {
     outFile_.open(filename);
     if (!outFile_.is_open())
@@ -17,13 +27,13 @@ CSVWriter::CSVWriter(const std::string &filename)
     }
 
     // Write the headers immediately to the buffer
-    buffer_ = "Order ID,Client Order ID,Instrument,Side,Exec Status,Quantity,Price,Reason,Transaction Time\n";
+    buffer_ = header;
 
     // Pre-allocate memory to prevent the string from resizing constantly
     buffer_.reserve(MAX_BUFFER_SIZE + 1024);
 }
 
-CSVWriter::~CSVWriter()
+BufferedCSVWriter::~BufferedCSVWriter()
 {
     // Flush whatever is left in the buffer when the program finishes
     if (!buffer_.empty())
@@ -32,7 +42,7 @@ CSVWriter::~CSVWriter()
     }
 }
 
-std::string CSVWriter::generateTimestamp() const
+std::string BufferedCSVWriter::generateTimestamp() const
 {
     using namespace std::chrono;
     auto now = system_clock::now();
@@ -52,21 +62,53 @@ std::string CSVWriter::generateTimestamp() const
     return oss.str();
 }
 
-void CSVWriter::write(const ExecutionReport &report)
+void BufferedCSVWriter::appendRow(const std::string &row)
+{
+    buffer_ += row;
+
+    // The optimization: If the buffer gets too big, dump it to the disk and clear it
+    if (buffer_.size() >= MAX_BUFFER_SIZE)
+    {
+        outFile_ << buffer_;
+        buffer_.clear();
+    }
+}
+
+ExecutionReportCSVWriter::ExecutionReportCSVWriter(const std::string &filename)
+    : BufferedCSVWriter(
+          filename,
+          "Order ID,Client Order ID,Instrument,Side,Exec Status,Quantity,Price,Transaction Time\n")
+{
+}
+
+void ExecutionReportCSVWriter::write(const ExecutionReport &report)
+{
+    std::ostringstream row;
+    row << report.orderID << ','
+        << report.clientOrderID << ','
+        << report.instrument << ','
+        << report.side << ','
+        << report.status << ','
+        << report.quantity << ','
+        << formatPrice(report.price) << ','
+        << generateTimestamp() << '\n';
+
+    appendRow(row.str());
+}
+
+RejectedExecutionReportCSVWriter::RejectedExecutionReportCSVWriter(const std::string &filename)
+    : BufferedCSVWriter(
+          filename,
+          "Order ID,Client Order ID,Instrument,Side,Exec Status,Quantity,Price,Rejected Reason,Transaction Time\n")
+{
+}
+
+void RejectedExecutionReportCSVWriter::write(const RejectedExecutionReport &report)
 {
     // Fallbacks for malformed rows (handling Example 7 rejections)
     const std::string sideText = report.sideText.has_value() ? *report.sideText : std::to_string(report.side);
     const std::string quantityText = report.quantityText.has_value() ? *report.quantityText : std::to_string(report.quantity);
-
-    std::ostringstream priceStream;
-    if (report.priceText.has_value())
-    {
-        priceStream << *report.priceText;
-    }
-    else
-    {
-        priceStream << std::fixed << std::setprecision(2) << report.price;
-    }
+    const std::string priceText = report.priceText.has_value() ? *report.priceText : formatPrice(report.price);
 
     // Build the row string
     std::ostringstream row;
@@ -76,16 +118,9 @@ void CSVWriter::write(const ExecutionReport &report)
         << sideText << ','
         << report.status << ','
         << quantityText << ','
-        << priceStream.str() << ','
-        << report.reason << ','
+        << priceText << ','
+        << report.rejectedReason << ','
         << generateTimestamp() << '\n';
 
-    buffer_ += row.str();
-
-    // The optimization: If the buffer gets too big, dump it to the disk and clear it
-    if (buffer_.size() >= MAX_BUFFER_SIZE)
-    {
-        outFile_ << buffer_;
-        buffer_.clear();
-    }
+    appendRow(row.str());
 }

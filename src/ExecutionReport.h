@@ -11,9 +11,11 @@ struct ExecutionReport
     double price = 0.0;
     int quantity = 0;
     int status = 0; // 0=New, 1=Rejected, 2=Fill, 3=PFill
-    std::string reason;
-    std::string transactionTime; // YYYYMMDD-HHMMSS.sss
+};
 
+struct RejectedExecutionReport : ExecutionReport
+{
+    std::string rejectedReason;
     std::optional<std::string> sideText;
     std::optional<std::string> quantityText;
     std::optional<std::string> priceText;

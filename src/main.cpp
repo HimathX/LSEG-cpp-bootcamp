@@ -1,7 +1,9 @@
 #include <algorithm>
 #include <chrono>
 #include <cstdint>
+#include <filesystem>
 #include <iostream>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -21,12 +23,67 @@ struct ProcessEvent {
     ParseReject parseReject;
 };
 
+namespace
+{
+    RejectedExecutionReport buildParseRejectReport(const ParseReject &reject)
+    {
+        RejectedExecutionReport report;
+        report.orderID = OrderIDGenerator::getNext();
+        report.clientOrderID = reject.clientOrderId;
+        report.instrument = reject.instrument;
+        report.status = 1; // 1 - Rejected
+        report.rejectedReason = reject.reason;
+        report.sideText = reject.sideText;
+        report.quantityText = reject.quantityText;
+        report.priceText = reject.priceText;
+        return report;
+    }
+
+    RejectedExecutionReport buildValidationRejectReport(const Order &order, const std::string &reason)
+    {
+        RejectedExecutionReport report;
+        report.orderID = OrderIDGenerator::getNext();
+        report.clientOrderID = order.clientOrderID;
+        report.instrument = order.instrument;
+        report.side = order.side;
+        report.quantity = order.quantity;
+        report.price = order.price;
+        report.status = 1; // 1 - Rejected
+        report.rejectedReason = reason;
+        return report;
+    }
+
+    std::optional<RejectedExecutionReport> buildRejectedReport(const ProcessEvent &event)
+    {
+        if (event.isParseReject)
+        {
+            return buildParseRejectReport(event.parseReject);
+        }
+
+        const Order &order = event.validOrder;
+
+        if (order.hasExtraFields)
+        {
+            return buildValidationRejectReport(order, "Extra field");
+        }
+
+        const std::string reason = Validator::validate(order);
+
+        if (!reason.empty())
+        {
+            return buildValidationRejectReport(order, reason);
+        }
+
+        return std::nullopt;
+    }
+} // namespace
+
 int main(int argc, char* argv[])
 {
     const auto startTime = std::chrono::steady_clock::now();
 
     // Default to the official input file name unless overridden by command line
-    std::string inputFile = "tests/sample_orders_6.csv";
+    std::string inputFile = (std::filesystem::current_path() / "tests/sample_orders_6.csv").string();
     if (argc > 1) {
         inputFile = argv[1];
     }
@@ -71,82 +128,34 @@ int main(int argc, char* argv[])
 
     // Initialize the core components
     MatchingEngine engine("FlowerExchange");
-    CSVWriter writer("execution_rep_6.csv");
+    ExecutionReportCSVWriter executionWriter("execution_rep_6.csv");
+    RejectedExecutionReportCSVWriter rejectedWriter("rejected_execution_rep_6.csv");
 
     int processedCount = 0;
     int rejectCount = 0;
-    int matchEventCount = 0;
+    int validOrderCount = 0;
 
     // Process the chronological timeline
     for (const auto& ev : timeline)
     {
-        if (ev.isParseReject)
+        if (std::optional<RejectedExecutionReport> rejectedReport = buildRejectedReport(ev);
+            rejectedReport.has_value())
         {
-            // --- 1. HANDLE MALFORMED ROWS (Phase 2) ---
-            ExecutionReport rep;
-            rep.orderID = OrderIDGenerator::getNext();
-            rep.clientOrderID = ev.parseReject.clientOrderId;
-            rep.instrument = ev.parseReject.instrument;
-            rep.status = 1; // 1 - Rejected
-            rep.reason = ev.parseReject.reason;
-            rep.sideText = ev.parseReject.sideText;
-            rep.quantityText = ev.parseReject.quantityText;
-            rep.priceText = ev.parseReject.priceText;
-            
-            writer.write(rep);
+            rejectedWriter.write(*rejectedReport);
             rejectCount++;
         }
         else
         {
-            // --- 2. HANDLE WELL-FORMED ROWS ---
             const Order& order = ev.validOrder;
-            std::string reason = Validator::validate(order);
 
-            if (!reason.empty())
+            // The order is 100% valid. Send it to the order book.
+            std::vector<ExecutionReport> matchReports = engine.MatchOrder(order);
+
+            for (const auto& rep : matchReports)
             {
-                // Business Rule Validation Failure (e.g. Price < 0)
-                ExecutionReport rep;
-                rep.orderID = OrderIDGenerator::getNext();
-                rep.clientOrderID = order.clientOrderID;
-                rep.instrument = order.instrument;
-                rep.side = order.side;
-                rep.quantity = order.quantity;
-                rep.price = order.price;
-                rep.status = 1; // 1 - Rejected
-                rep.reason = reason;
-                
-                writer.write(rep);
-                rejectCount++;
+                executionWriter.write(rep);
             }
-            else if (order.hasExtraFields)
-            {
-                // Validation Failure: More columns than expected
-                ExecutionReport rep;
-                rep.orderID = OrderIDGenerator::getNext();
-                rep.clientOrderID = order.clientOrderID;
-                rep.instrument = order.instrument;
-                rep.side = order.side;
-                rep.quantity = order.quantity;
-                rep.price = order.price;
-                rep.status = 1;
-                rep.reason = "Extra field";
-                
-                writer.write(rep);
-                rejectCount++;
-            }
-            else
-            {
-                // --- 3. THE MATCHING ENGINE (Phase 3) ---
-                // The order is 100% valid. Send it to the Order Book!
-                std::vector<ExecutionReport> matchReports = engine.MatchOrder(order);
-                
-                // Write all generated reports (could be multiple if PFill)
-                for (const auto& rep : matchReports)
-                {
-                    writer.write(rep);
-                }
-                matchEventCount++;
-            }
+            validOrderCount++;
         }
         processedCount++;
     }
@@ -154,8 +163,9 @@ int main(int argc, char* argv[])
     std::cout << "Done.\n";
     std::cout << "Total rows processed : " << processedCount << "\n";
     std::cout << "Total rejected rows  : " << rejectCount << "\n";
-    std::cout << "Total valid orders   : " << matchEventCount << "\n";
-    std::cout << "Output saved to execution_rep.csv\n";
+    std::cout << "Total valid orders   : " << validOrderCount << "\n";
+    std::cout << "Successful output    : execution_rep.csv\n";
+    std::cout << "Rejected output      : rejected_execution_rep.csv\n";
     const auto endTime = std::chrono::steady_clock::now();
     const auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(
         endTime - startTime);
