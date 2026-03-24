@@ -7,10 +7,17 @@ import type { ExecutionReport } from "./components/ExecutionBlotter";
 import { VolumeChart } from "./components/VolumeChart";
 import { QuickEntry } from "./components/QuickEntry";
 import { motion } from "framer-motion";
+import { parseExecutionCSV } from "./lib/csvParser";
 
 export default function App() {
   const [reports, setReports] = useState<ExecutionReport[]>([]);
-  const [hasRun, setHasRun] = useState(false);
+  const [volumeData, setVolumeData] = useState([
+    { name: "Rose", volume: 0 },
+    { name: "Lavender", volume: 0 },
+    { name: "Lotus", volume: 0 },
+    { name: "Tulip", volume: 0 },
+    { name: "Orchid", volume: 0 },
+  ]);
 
   // Mock data for the 5 order books
   const generateMockBooks = () => {
@@ -26,28 +33,43 @@ export default function App() {
 
   const [books, setBooks] = useState(generateMockBooks());
 
-  const handleRunComplete = () => {
-    setHasRun(true);
-    // Set some mock execution reports to simulate the parsed CSV
-    const mockReports: ExecutionReport[] = [
-      { orderId: "ord_001", clientOrderId: "cl_1001", instrument: "Rose", side: 1, price: 55.5, quantity: 100, status: 2, transactionTime: "09:30:01.123" },
-      { orderId: "ord_002", clientOrderId: "cl_1002", instrument: "Tulip", side: 2, price: 42.0, quantity: 50, status: 1, reason: "Insufficient funds", transactionTime: "09:30:02.450" },
-      { orderId: "ord_003", clientOrderId: "cl_1003", instrument: "Lotus", side: 1, price: 88.2, quantity: 200, status: 3, transactionTime: "09:30:04.991" },
-      { orderId: "ord_004", clientOrderId: "cl_1004", instrument: "Orchid", side: 2, price: 120.0, quantity: 10, status: 0, transactionTime: "09:30:05.100" },
-      { orderId: "ord_005", clientOrderId: "cl_1005", instrument: "Lavender", side: 1, price: 30.5, quantity: 500, status: 2, transactionTime: "09:30:06.002" },
-      { orderId: "ord_006", clientOrderId: "cl_1006", instrument: "Rose", side: 2, price: 55.6, quantity: 100, status: 2, transactionTime: "09:30:07.123" },
-    ];
-    setReports(mockReports);
-    setBooks(generateMockBooks()); // Randomize books to show activity
-  };
+  const handleRunComplete = (data: { summary: string; executionData: string; rejectedData: string }) => {
+    
+    // Parse the incoming CSV strings fully on the frontend
+    const executions = parseExecutionCSV(data.executionData);
+    const rejects = parseExecutionCSV(data.rejectedData);
+    
+    const allReports = [...executions, ...rejects].sort((a, b) => 
+      a.transactionTime.localeCompare(b.transactionTime)
+    );
 
-  const mockVolumeData = [
-    { name: "Rose", volume: hasRun ? 4000 : 0 },
-    { name: "Lavender", volume: hasRun ? 3200 : 0 },
-    { name: "Lotus", volume: hasRun ? 2800 : 0 },
-    { name: "Tulip", volume: hasRun ? 1500 : 0 },
-    { name: "Orchid", volume: hasRun ? 500 : 0 },
-  ];
+    setReports(allReports);
+
+    // Properly compute executed volumes! (Avoid double-counting buyer and seller leg)
+    const volMap: Record<string, number> = {
+      Rose: 0, Lavender: 0, Lotus: 0, Tulip: 0, Orchid: 0
+    };
+    
+    executions.forEach((rep) => {
+      // We only count volume once for trades. We can just pick BUY side.
+      if ((rep.status === 2 || rep.status === 3) && rep.side === 1) {
+        if (volMap[rep.instrument] !== undefined) {
+          volMap[rep.instrument] += rep.quantity;
+        }
+      }
+    });
+
+    setVolumeData([
+      { name: "Rose", volume: volMap["Rose"] },
+      { name: "Lavender", volume: volMap["Lavender"] },
+      { name: "Lotus", volume: volMap["Lotus"] },
+      { name: "Tulip", volume: volMap["Tulip"] },
+      { name: "Orchid", volume: volMap["Orchid"] },
+    ]);
+
+    // Randomize books just to show matching activity visually 
+    setBooks(generateMockBooks()); 
+  };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50 font-sans selection:bg-success/30 display-flex flex-col">
@@ -92,7 +114,7 @@ export default function App() {
             className="lg:col-span-3 space-y-6"
           >
             <ExecutionBlotter reports={reports} />
-            <VolumeChart data={mockVolumeData} />
+            <VolumeChart data={volumeData} />
           </motion.div>
 
           {/* Sidebar spans 1 column */}

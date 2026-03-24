@@ -3,9 +3,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Upload, Play, Loader2 } from "lucide-react";
+import { API_ENDPOINTS } from "../lib/api";
 
 interface UploadSectionProps {
-  onRunComplete: () => void;
+  onRunComplete: (data: { summary: string; executionData: string; rejectedData: string }) => void;
 }
 
 export function UploadSection({ onRunComplete }: UploadSectionProps) {
@@ -13,20 +14,46 @@ export function UploadSection({ onRunComplete }: UploadSectionProps) {
   const [isRunning, setIsRunning] = useState(false);
 
   const handleRunEngine = async () => {
-    if (!file && !import.meta.env.DEV) {
-      // Allow running without file in dev/demo mode purely for UI testing
-      // alert("Please select a file first.");
-      // return;
+    if (!file) {
+      if (!import.meta.env.DEV) {
+        alert("Please select a file first.");
+        return;
+      }
+      return; 
     }
 
     setIsRunning(true);
-    // Placeholder to call Node.js proxy to execute 'exchange.exe'
     
-    // Simulate engine processing delay
-    setTimeout(() => {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch(API_ENDPOINTS.EXECUTE, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || "Failed to execute");
+      }
+
+      onRunComplete({
+        summary: data.summary,
+        executionData: data.executionData,
+        rejectedData: data.rejectedData,
+      });
+      
+    } catch (error) {
+      console.error("Execution failed:", error);
+      alert("Failed to run engine. Make sure the FastAPI server is running.");
+    } finally {
       setIsRunning(false);
-      onRunComplete();
-    }, 2000);
+    }
   };
 
   return (

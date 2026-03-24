@@ -128,8 +128,8 @@ int main(int argc, char* argv[])
 
     // Initialize the core components
     MatchingEngine engine("FlowerExchange");
-    ExecutionReportCSVWriter executionWriter("execution_rep_6.csv");
-    RejectedExecutionReportCSVWriter rejectedWriter("rejected_execution_rep_6.csv");
+    ExecutionReportCSVWriter executionWriter("execution_rep.csv");
+    RejectedExecutionReportCSVWriter rejectedWriter("rejected_execution_rep.csv");
 
     int processedCount = 0;
     int rejectCount = 0;
