@@ -58,14 +58,14 @@ export function UploadSection({ onRunComplete }: UploadSectionProps) {
   };
 
   return (
-    <Card className="bg-zinc-900 border-white/10">
+    <Card className="border-border bg-card">
       <CardContent className="flex flex-col md:flex-row gap-4 items-center justify-between p-6">
         <div className="flex-1 w-full">
-          <h2 className="text-lg font-semibold text-slate-200 mb-2 flex items-center gap-2">
-            <Upload size={18} className="text-slate-400" />
+          <h2 className="text-lg font-semibold text-card-foreground mb-2 flex items-center gap-2">
+            <Upload size={18} className="text-muted-foreground" />
             Upload Orders
           </h2>
-          <p className="text-sm text-slate-500 mb-4">
+          <p className="text-sm text-muted-foreground mb-4">
             Select an orders.csv file to process through the matching engine.
           </p>
           
@@ -74,7 +74,7 @@ export function UploadSection({ onRunComplete }: UploadSectionProps) {
               type="file" 
               accept=".csv"
               onChange={(e) => setFile(e.target.files?.[0] || null)}
-              className="text-sm bg-zinc-900 text-slate-200 border-white/10"
+              className="text-sm"
             />
           </div>
         </div>

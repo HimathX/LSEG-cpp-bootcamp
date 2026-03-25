@@ -5,9 +5,6 @@ import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    {/* Adding 'dark' class here gives it that sleek LSEG terminal look */}
-    <main className="dark text-foreground bg-background min-h-screen">
-      <App />
-    </main>
+    <App />
   </React.StrictMode>
 );

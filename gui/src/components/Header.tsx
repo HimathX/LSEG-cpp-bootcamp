@@ -1,7 +1,13 @@
 import { useState, useEffect } from "react";
-import { Clock } from "lucide-react";
+import { Clock, Moon, Sun } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
-export function Header() {
+interface HeaderProps {
+  theme: "light" | "dark";
+  onToggleTheme: () => void;
+}
+
+export function Header({ theme, onToggleTheme }: HeaderProps) {
   const [time, setTime] = useState(new Date());
 
   useEffect(() => {
@@ -19,6 +25,16 @@ export function Header() {
       
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-2 text-muted-foreground">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onToggleTheme}
+            className="h-8 px-2.5"
+            aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+            title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+          >
+            {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
+          </Button>
           <Clock size={16} className="text-green-500" />
           <span className="font-mono text-sm tracking-wider">
             {time.toLocaleTimeString("en-US", { hour12: false })}

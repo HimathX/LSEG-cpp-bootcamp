@@ -18,12 +18,12 @@ export interface ExecutionReport {
 }
 
 interface ExecutionBlotterProps {
+  datasetVersion: number;
   executions: ExecutionReport[];
   rejections: ExecutionReport[];
 }
 
-export function ExecutionBlotter({ executions, rejections }: ExecutionBlotterProps) {
-  
+export function ExecutionBlotter({ datasetVersion, executions, rejections }: ExecutionBlotterProps) {
   const getStatusChip = (status: number, reason?: string) => {
     switch (status) {
       case 0:
@@ -59,47 +59,48 @@ export function ExecutionBlotter({ executions, rejections }: ExecutionBlotterPro
 
   const [activeTab, setActiveTab] = useState<"executions" | "rejections">("executions");
   const activeReports = activeTab === "executions" ? executions : rejections;
+  const tableKey = `${datasetVersion}-${activeTab}`;
 
   return (
-      <div className="flex flex-col gap-4">
-        <div className="flex justify-between items-end">
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-              Execution Blotter
-              <Badge variant="secondary" className="font-normal">
-                {executions.length + rejections.length} Records
-              </Badge>
-            </h2>
-            <div className="flex bg-zinc-900 border border-white/10 p-1 rounded-md w-fit gap-1">
-              <Button 
-                size="sm" 
-                variant={activeTab === "executions" ? "default" : "ghost"}
-                onClick={() => setActiveTab("executions")}
-                className={activeTab === "executions" ? "bg-white/10" : "text-slate-400 hover:text-slate-200"}
-              >
-                Executions ({executions.length})
-              </Button>
-              <Button 
-                size="sm" 
-                variant={activeTab === "rejections" ? "default" : "ghost"}
-                onClick={() => setActiveTab("rejections")}
-                className={activeTab === "rejections" ? "bg-white/10" : "text-slate-400 hover:text-slate-200"}
-              >
-                Rejections ({rejections.length})
-              </Button>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={handleDownloadExecs}
+    <div className="flex flex-col gap-4">
+      <div className="flex justify-between items-end">
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+            Execution Blotter
+            <Badge variant="secondary" className="font-normal">
+              {executions.length + rejections.length} Records
+            </Badge>
+          </h2>
+          <div className="flex w-fit gap-1 rounded-md border border-border bg-card p-1">
+            <Button
+              size="sm"
+              variant={activeTab === "executions" ? "default" : "ghost"}
+              onClick={() => setActiveTab("executions")}
+              className={activeTab === "executions" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}
             >
+              Executions ({executions.length})
+            </Button>
+            <Button
+              size="sm"
+              variant={activeTab === "rejections" ? "default" : "ghost"}
+              onClick={() => setActiveTab("rejections")}
+              className={activeTab === "rejections" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}
+            >
+              Rejections ({rejections.length})
+            </Button>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleDownloadExecs}
+          >
             <Download className="mr-2 h-4 w-4" /> Executions
           </Button>
-          <Button 
-            size="sm" 
-            variant="outline" 
+          <Button
+            size="sm"
+            variant="outline"
             onClick={handleDownloadRejects}
           >
             <Download className="mr-2 h-4 w-4" /> Rejections
@@ -108,9 +109,10 @@ export function ExecutionBlotter({ executions, rejections }: ExecutionBlotterPro
       </div>
 
       <div className="w-full overflow-x-auto rounded-xl border border-border bg-card shadow-sm max-h-[400px]">
-        <Table>
+        <Table key={tableKey}>
           <TableHeader className="sticky top-0 z-10 bg-muted/90 backdrop-blur-md">
             <TableRow>
+              <TableHead className="py-3 px-4 w-16">NO</TableHead>
               <TableHead className="py-3 px-4">TIME</TableHead>
               <TableHead className="py-3 px-4">ORDER ID</TableHead>
               <TableHead className="py-3 px-4">CLIENT ID</TableHead>
@@ -124,15 +126,19 @@ export function ExecutionBlotter({ executions, rejections }: ExecutionBlotterPro
               )}
             </TableRow>
           </TableHeader>
-          <TableBody>
+          <TableBody key={tableKey}>
             {activeReports.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={activeTab === "rejections" ? 9 : 8} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={activeTab === "rejections" ? 10 : 9} className="h-24 text-center text-muted-foreground">
                   No {activeTab} available.
                 </TableCell>
               </TableRow>
-            ) : activeReports.map((report) => (
-              <TableRow key={report.orderId} className="font-mono text-sm group">
+            ) : activeReports.map((report, index) => (
+              <TableRow
+                key={`${datasetVersion}-${activeTab}-${report.orderId}-${report.clientOrderId}-${report.transactionTime}-${report.status}-${report.quantity}-${report.price}-${index}`}
+                className="font-mono text-sm group"
+              >
+                <TableCell className="text-muted-foreground">{index + 1}</TableCell>
                 <TableCell className="text-muted-foreground">{report.transactionTime}</TableCell>
                 <TableCell>{report.orderId}</TableCell>
                 <TableCell className="text-muted-foreground">{report.clientOrderId}</TableCell>
