@@ -26,17 +26,24 @@ def parse_csv_to_dicts(filepath):
     reports = []
     if not os.path.exists(filepath):
         return reports
+    is_reject_file = "rejected" in filepath
+
     with open(filepath, "r") as f:
         reader = csv.reader(f)
         header = next(reader, None)
         for row in reader:
-            if len(row) < 9: continue
+            if not row: continue
+
+            if is_reject_file and len(row) < 9: continue
+            if not is_reject_file and len(row) < 8: continue
+            
             side_text = row[3].strip().lower()
             side = 1 if side_text in ("buy", "1") else 2
+            
             try:
-                price_val = float(row[4].strip())
+                status_val = int(row[4].strip())
             except ValueError:
-                price_val = 0.0
+                status_val = 0
 
             try:
                 qty_val = int(row[5].strip())
@@ -44,9 +51,16 @@ def parse_csv_to_dicts(filepath):
                 qty_val = 0
 
             try:
-                status_val = int(row[6].strip())
+                price_val = float(row[6].strip())
             except ValueError:
-                status_val = 0
+                price_val = 0.0
+
+            if is_reject_file:
+                reason = row[7].strip() if row[7].strip() else None
+                txn_time = row[8].strip()
+            else:
+                reason = None
+                txn_time = row[7].strip()
             
             reports.append({
                 "orderId": row[0].strip(),
@@ -56,8 +70,8 @@ def parse_csv_to_dicts(filepath):
                 "price": price_val,
                 "quantity": qty_val,
                 "status": status_val,
-                "reason": row[7].strip() if row[7].strip() else None,
-                "transactionTime": row[8].strip()
+                "reason": reason,
+                "transactionTime": txn_time
             })
     return reports
 

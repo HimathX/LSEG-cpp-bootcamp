@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { Header } from "./components/Header";
 import { UploadSection } from "./components/UploadSection";
-import { OrderBook } from "./components/OrderBook";
 import { ExecutionBlotter } from "./components/ExecutionBlotter";
 import type { ExecutionReport } from "./components/ExecutionBlotter";
 import { VolumeChart } from "./components/VolumeChart";
-import { QuickEntry } from "./components/QuickEntry";
 import { motion } from "framer-motion";
 
 export default function App() {
-  const [reports, setReports] = useState<ExecutionReport[]>([]);
+  const [executionsList, setExecutionsList] = useState<ExecutionReport[]>([]);
+  const [rejectionsList, setRejectionsList] = useState<ExecutionReport[]>([]);
+  const [summary, setSummary] = useState<string | null>(null);
   const [volumeData, setVolumeData] = useState([
     { name: "Rose", volume: 0 },
     { name: "Lavender", volume: 0 },
@@ -18,30 +18,15 @@ export default function App() {
     { name: "Orchid", volume: 0 },
   ]);
 
-  // Initialize with empty order books
-  const generateEmptyBooks = () => {
-    return ["Rose", "Lavender", "Lotus", "Tulip", "Orchid"].map((instrument) => {
-      return {
-        instrument,
-        bids: [],
-        asks: [],
-      };
-    });
-  };
-
-  const [books, setBooks] = useState(generateEmptyBooks());
-
   const handleRunComplete = (data: { summary: string; executionData: ExecutionReport[]; rejectedData: ExecutionReport[] }) => {
     
     // Data is now pre-parsed by the backend into JSON
     const executions = data.executionData || [];
     const rejects = data.rejectedData || [];
     
-    const allReports = [...executions, ...rejects].sort((a, b) => 
-      a.transactionTime.localeCompare(b.transactionTime)
-    );
-
-    setReports(allReports);
+    setSummary(data.summary);
+    setExecutionsList(executions.sort((a, b) => a.transactionTime.localeCompare(b.transactionTime)));
+    setRejectionsList(rejects.sort((a, b) => a.transactionTime.localeCompare(b.transactionTime)));
 
     // Properly compute executed volumes! (Avoid double-counting buyer and seller leg)
     const volMap: Record<string, number> = {
@@ -64,10 +49,6 @@ export default function App() {
       { name: "Tulip", volume: volMap["Tulip"] },
       { name: "Orchid", volume: volMap["Orchid"] },
     ]);
-
-    // If you want them to remain empty or clear them out, you can set it to generateEmptyBooks()
-    // However, since we don't have L2 order book snapshots from the engine, we can leave them empty
-    setBooks(generateEmptyBooks()); 
   };
 
   return (
@@ -85,48 +66,33 @@ export default function App() {
           <UploadSection onRunComplete={handleRunComplete} />
         </motion.div>
 
-        {/* Middle Section: Order Books */}
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="grid grid-cols-2 lg:grid-cols-5 gap-4"
-        >
-          {books.map((book) => (
-            <OrderBook 
-              key={book.instrument} 
-              instrument={book.instrument} 
-              bids={book.bids} 
-              asks={book.asks} 
-            />
-          ))}
-        </motion.div>
+        {/* Engine Summary */}
+        {summary && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+            className="w-full"
+          >
+            <div className="bg-zinc-900 border border-white/10 p-4 rounded-xl text-sm font-mono text-zinc-300 whitespace-pre-wrap shadow-sm">
+              <span className="text-zinc-500 block mb-2 font-sans text-xs font-bold tracking-wider border-b border-white/5 pb-2">
+                MATCHING ENGINE OUTPUT
+              </span>
+              {summary}
+            </div>
+          </motion.div>
+        )}
 
         {/* Bottom Section: Dashboard Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
-          
-          {/* Main Blotter spans 3 columns */}
-          <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="lg:col-span-3 space-y-6"
-          >
-            <ExecutionBlotter reports={reports} />
-            <VolumeChart data={volumeData} />
-          </motion.div>
-
-          {/* Sidebar spans 1 column */}
-          <motion.div 
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
-            className="lg:col-span-1 h-[730px]"
-          >
-            <QuickEntry />
-          </motion.div>
-          
-        </div>
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="space-y-6"
+        >
+          <ExecutionBlotter executions={executionsList} rejections={rejectionsList} />
+          <VolumeChart data={volumeData} />
+        </motion.div>
       </main>
     </div>
   );

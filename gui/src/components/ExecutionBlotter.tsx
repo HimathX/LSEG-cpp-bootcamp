@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -17,10 +18,11 @@ export interface ExecutionReport {
 }
 
 interface ExecutionBlotterProps {
-  reports: ExecutionReport[];
+  executions: ExecutionReport[];
+  rejections: ExecutionReport[];
 }
 
-export function ExecutionBlotter({ reports }: ExecutionBlotterProps) {
+export function ExecutionBlotter({ executions, rejections }: ExecutionBlotterProps) {
   
   const getStatusChip = (status: number, reason?: string) => {
     switch (status) {
@@ -55,23 +57,44 @@ export function ExecutionBlotter({ reports }: ExecutionBlotterProps) {
     window.open(API_ENDPOINTS.DOWNLOAD_REJECTS, "_blank");
   };
 
+  const [activeTab, setActiveTab] = useState<"executions" | "rejections">("executions");
+  const activeReports = activeTab === "executions" ? executions : rejections;
+
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex justify-between items-end">
-        <div>
-          <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-            Execution Blotter
-            <Badge variant="secondary" className="font-normal">
-              {reports.length} Records
-            </Badge>
-          </h2>
-        </div>
-        <div className="flex gap-2">
-          <Button 
-            size="sm" 
-            variant="outline" 
-            onClick={handleDownloadExecs}
-          >
+      <div className="flex flex-col gap-4">
+        <div className="flex justify-between items-end">
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+              Execution Blotter
+              <Badge variant="secondary" className="font-normal">
+                {executions.length + rejections.length} Records
+              </Badge>
+            </h2>
+            <div className="flex bg-zinc-900 border border-white/10 p-1 rounded-md w-fit gap-1">
+              <Button 
+                size="sm" 
+                variant={activeTab === "executions" ? "default" : "ghost"}
+                onClick={() => setActiveTab("executions")}
+                className={activeTab === "executions" ? "bg-white/10" : "text-slate-400 hover:text-slate-200"}
+              >
+                Executions ({executions.length})
+              </Button>
+              <Button 
+                size="sm" 
+                variant={activeTab === "rejections" ? "default" : "ghost"}
+                onClick={() => setActiveTab("rejections")}
+                className={activeTab === "rejections" ? "bg-white/10" : "text-slate-400 hover:text-slate-200"}
+              >
+                Rejections ({rejections.length})
+              </Button>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={handleDownloadExecs}
+            >
             <Download className="mr-2 h-4 w-4" /> Executions
           </Button>
           <Button 
@@ -96,16 +119,19 @@ export function ExecutionBlotter({ reports }: ExecutionBlotterProps) {
               <TableHead className="py-3 px-4 text-right">QTY</TableHead>
               <TableHead className="py-3 px-4 text-right">PRICE</TableHead>
               <TableHead className="py-3 px-4">STATUS</TableHead>
+              {activeTab === "rejections" && (
+                <TableHead className="py-3 px-4">REASON</TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
-            {reports.length === 0 ? (
+            {activeReports.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
-                  No execution reports available.
+                <TableCell colSpan={activeTab === "rejections" ? 9 : 8} className="h-24 text-center text-muted-foreground">
+                  No {activeTab} available.
                 </TableCell>
               </TableRow>
-            ) : reports.map((report) => (
+            ) : activeReports.map((report) => (
               <TableRow key={report.orderId} className="font-mono text-sm group">
                 <TableCell className="text-muted-foreground">{report.transactionTime}</TableCell>
                 <TableCell>{report.orderId}</TableCell>
@@ -115,6 +141,9 @@ export function ExecutionBlotter({ reports }: ExecutionBlotterProps) {
                 <TableCell className="text-right">{report.quantity}</TableCell>
                 <TableCell className="text-right">{report.price.toFixed(2)}</TableCell>
                 <TableCell>{getStatusChip(report.status, report.reason)}</TableCell>
+                {activeTab === "rejections" && (
+                  <TableCell className="text-orange-400 font-bold text-xs">{report.reason}</TableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>
