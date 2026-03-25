@@ -38,22 +38,28 @@ def parse_csv_to_dicts(filepath):
             if not is_reject_file and len(row) < 8: continue
             
             side_text = row[3].strip().lower()
-            side = 1 if side_text in ("buy", "1") else 2
+            if side_text in ("buy", "1"):
+                side = 1
+            elif side_text in ("sell", "2"):
+                side = 2
+            else:
+                side = 0
             
             try:
                 status_val = int(row[4].strip())
             except ValueError:
                 status_val = 0
-
+                
             try:
                 qty_val = int(row[5].strip())
             except ValueError:
-                qty_val = 0
+                qty_val = 0    
 
             try:
                 price_val = float(row[6].strip())
             except ValueError:
                 price_val = 0.0
+    
 
             if is_reject_file:
                 reason = row[7].strip() if row[7].strip() else None

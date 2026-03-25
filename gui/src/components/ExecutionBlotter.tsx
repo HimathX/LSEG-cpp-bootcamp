@@ -44,9 +44,15 @@ export function ExecutionBlotter({ datasetVersion, executions, rejections }: Exe
   };
 
   const getSideText = (side: number) => {
-    return side === 1 
-      ? <span className="text-green-500 font-bold">BUY</span> 
-      : <span className="text-red-500 font-bold">SELL</span>;
+    if (side === 1) {
+      return <span className="font-bold text-green-500">BUY</span>;
+    }
+
+    if (side === 2) {
+      return <span className="font-bold text-red-500">SELL</span>;
+    }
+
+    return <span className="font-bold text-gray-500">UNKNOWN</span>;
   };
 
   const handleDownloadExecs = () => {
