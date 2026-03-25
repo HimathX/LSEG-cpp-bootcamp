@@ -1,9 +1,10 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import subprocess
 import os
 import shutil
-
+import csv
 app = FastAPI(title="Flower Exchange Bridge")
 
 # --- CORS CONFIGURATION ---
@@ -20,6 +21,45 @@ ENGINE_PATH = os.path.abspath("../exchange.exe")
 INPUT_FILE = "orders.csv"
 SUCCESS_OUTPUT_FILE = "execution_rep.csv"
 REJECTED_OUTPUT_FILE = "rejected_execution_rep.csv"
+
+def parse_csv_to_dicts(filepath):
+    reports = []
+    if not os.path.exists(filepath):
+        return reports
+    with open(filepath, "r") as f:
+        reader = csv.reader(f)
+        header = next(reader, None)
+        for row in reader:
+            if len(row) < 9: continue
+            side_text = row[3].strip().lower()
+            side = 1 if side_text in ("buy", "1") else 2
+            try:
+                price_val = float(row[4].strip())
+            except ValueError:
+                price_val = 0.0
+
+            try:
+                qty_val = int(row[5].strip())
+            except ValueError:
+                qty_val = 0
+
+            try:
+                status_val = int(row[6].strip())
+            except ValueError:
+                status_val = 0
+            
+            reports.append({
+                "orderId": row[0].strip(),
+                "clientOrderId": row[1].strip(),
+                "instrument": row[2].strip(),
+                "side": side,
+                "price": price_val,
+                "quantity": qty_val,
+                "status": status_val,
+                "reason": row[7].strip() if row[7].strip() else None,
+                "transactionTime": row[8].strip()
+            })
+    return reports
 
 @app.post("/api/execute")
 async def execute_matching_engine(file: UploadFile = File(...)):
@@ -47,26 +87,35 @@ async def execute_matching_engine(file: UploadFile = File(...)):
         if not os.path.exists(REJECTED_OUTPUT_FILE):
             raise HTTPException(status_code=500, detail="Engine failed to generate rejected_execution_rep.csv")
 
-        # 4. Read both report files
-        with open(SUCCESS_OUTPUT_FILE, "r") as f:
-            execution_csv_content = f.read()
+        # 4. Read and parse both report files
+        execution_data = parse_csv_to_dicts(SUCCESS_OUTPUT_FILE)
+        rejected_data = parse_csv_to_dicts(REJECTED_OUTPUT_FILE)
 
-        with open(REJECTED_OUTPUT_FILE, "r") as f:
-            rejected_csv_content = f.read()
-
-        # 5. Return the summary (stdout) and both raw CSV outputs to the frontend
+        # 5. Return the summary (stdout) and both parsed JSON outputs to the frontend
         return {
             "success": True,
             "summary": result.stdout, # The counts you print in your C++ main.cpp
-            "data": execution_csv_content,
-            "executionData": execution_csv_content,
-            "rejectedData": rejected_csv_content,
+            "data": execution_data,
+            "executionData": execution_data,
+            "rejectedData": rejected_data,
         }
 
     except subprocess.CalledProcessError as e:
         return {"success": False, "error": f"Engine Crash: {e.stderr}"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/download/executions")
+def download_executions():
+    if not os.path.exists(SUCCESS_OUTPUT_FILE):
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(SUCCESS_OUTPUT_FILE, media_type="text/csv", filename="execution_rep.csv")
+
+@app.get("/api/download/rejections")
+def download_rejections():
+    if not os.path.exists(REJECTED_OUTPUT_FILE):
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(REJECTED_OUTPUT_FILE, media_type="text/csv", filename="rejected_execution_rep.csv")
 
 @app.get("/health")
 def health_check():

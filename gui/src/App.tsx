@@ -7,7 +7,6 @@ import type { ExecutionReport } from "./components/ExecutionBlotter";
 import { VolumeChart } from "./components/VolumeChart";
 import { QuickEntry } from "./components/QuickEntry";
 import { motion } from "framer-motion";
-import { parseExecutionCSV } from "./lib/csvParser";
 
 export default function App() {
   const [reports, setReports] = useState<ExecutionReport[]>([]);
@@ -19,25 +18,24 @@ export default function App() {
     { name: "Orchid", volume: 0 },
   ]);
 
-  // Mock data for the 5 order books
-  const generateMockBooks = () => {
+  // Initialize with empty order books
+  const generateEmptyBooks = () => {
     return ["Rose", "Lavender", "Lotus", "Tulip", "Orchid"].map((instrument) => {
-      const basePrice = Math.random() * 50 + 10;
       return {
         instrument,
-        bids: Array.from({ length: 3 }).map((_, i) => ({ price: basePrice - i * 0.5, qty: Math.floor(Math.random() * 100) + 10 })),
-        asks: Array.from({ length: 3 }).map((_, i) => ({ price: basePrice + 0.5 + i * 0.5, qty: Math.floor(Math.random() * 100) + 10 })),
+        bids: [],
+        asks: [],
       };
     });
   };
 
-  const [books, setBooks] = useState(generateMockBooks());
+  const [books, setBooks] = useState(generateEmptyBooks());
 
-  const handleRunComplete = (data: { summary: string; executionData: string; rejectedData: string }) => {
+  const handleRunComplete = (data: { summary: string; executionData: ExecutionReport[]; rejectedData: ExecutionReport[] }) => {
     
-    // Parse the incoming CSV strings fully on the frontend
-    const executions = parseExecutionCSV(data.executionData);
-    const rejects = parseExecutionCSV(data.rejectedData);
+    // Data is now pre-parsed by the backend into JSON
+    const executions = data.executionData || [];
+    const rejects = data.rejectedData || [];
     
     const allReports = [...executions, ...rejects].sort((a, b) => 
       a.transactionTime.localeCompare(b.transactionTime)
@@ -67,8 +65,9 @@ export default function App() {
       { name: "Orchid", volume: volMap["Orchid"] },
     ]);
 
-    // Randomize books just to show matching activity visually 
-    setBooks(generateMockBooks()); 
+    // If you want them to remain empty or clear them out, you can set it to generateEmptyBooks()
+    // However, since we don't have L2 order book snapshots from the engine, we can leave them empty
+    setBooks(generateEmptyBooks()); 
   };
 
   return (

@@ -2,6 +2,7 @@ import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { API_ENDPOINTS } from "../lib/api";
 
 export interface ExecutionReport {
   orderId: string;
@@ -46,23 +47,12 @@ export function ExecutionBlotter({ reports }: ExecutionBlotterProps) {
       : <span className="text-red-500 font-bold">SELL</span>;
   };
 
-  const handleDownload = () => {
-    if (reports.length === 0) return;
-    
-    const headers = "OrderID,ClientOrderID,Instrument,Side,Price,Quantity,Status,Reason,Time\n";
-    const csvContent = reports.map(r => 
-      `${r.orderId},${r.clientOrderId},${r.instrument},${r.side === 1 ? 'Buy' : 'Sell'},${r.price},${r.quantity},${r.status},${r.reason || ''},${r.transactionTime}`
-    ).join("\n");
-    
-    const blob = new Blob([headers + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", "execution_report.csv");
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleDownloadExecs = () => {
+    window.open(API_ENDPOINTS.DOWNLOAD_EXECS, "_blank");
+  };
+
+  const handleDownloadRejects = () => {
+    window.open(API_ENDPOINTS.DOWNLOAD_REJECTS, "_blank");
   };
 
   return (
@@ -76,13 +66,22 @@ export function ExecutionBlotter({ reports }: ExecutionBlotterProps) {
             </Badge>
           </h2>
         </div>
-        <Button 
-          size="sm" 
-          variant="outline" 
-          onClick={handleDownload}
-        >
-          <Download className="mr-2 h-4 w-4" /> Download Report
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={handleDownloadExecs}
+          >
+            <Download className="mr-2 h-4 w-4" /> Executions
+          </Button>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={handleDownloadRejects}
+          >
+            <Download className="mr-2 h-4 w-4" /> Rejections
+          </Button>
+        </div>
       </div>
 
       <div className="w-full overflow-x-auto rounded-xl border border-border bg-card shadow-sm max-h-[400px]">

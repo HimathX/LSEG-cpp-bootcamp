@@ -3,4 +3,6 @@ export const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:80
 
 export const API_ENDPOINTS = {
   EXECUTE: `${API_BASE_URL}/api/execute`,
+  DOWNLOAD_EXECS: `${API_BASE_URL}/api/download/executions`,
+  DOWNLOAD_REJECTS: `${API_BASE_URL}/api/download/rejections`,
 };

@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Upload, Play, Loader2 } from "lucide-react";
 import { API_ENDPOINTS } from "../lib/api";
+import type { ExecutionReport } from "./ExecutionBlotter";
 
 interface UploadSectionProps {
-  onRunComplete: (data: { summary: string; executionData: string; rejectedData: string }) => void;
+  onRunComplete: (data: { summary: string; executionData: ExecutionReport[]; rejectedData: ExecutionReport[] }) => void;
 }
 
 export function UploadSection({ onRunComplete }: UploadSectionProps) {
