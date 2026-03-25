@@ -1,0 +1,5 @@
+Order ID,Client Order ID,Instrument,Side,Exec Status,Quantity,Price,Rejected Reason,Transaction Time
+ord6,S2BAD1,Rose,3,1,40,57.00,Invalid side,<TIMESTAMP>
+ord11,,Rose,1,1,60,55.00,Invalid client order id,<TIMESTAMP>
+ord16,S2BAD2,Lotus,1,1,50,-1.00,Invalid price,<TIMESTAMP>
+ord19,S2BAD3,Daisy,1,1,100,30.00,Invalid instrument,<TIMESTAMP>
