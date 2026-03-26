@@ -9,10 +9,12 @@ from pathlib import Path
 
 
 TIMESTAMP_PATTERN = re.compile(r"\d{8}-\d{6}\.\d{3}")
+DEFAULT_SAMPLE_NUMBERS = ["2", "3", "4"]
 
 
 def normalize_timestamps(text: str) -> str:
-    normalized = TIMESTAMP_PATTERN.sub("<TIMESTAMP>", text.replace("\r\n", "\n"))
+    normalized_text = text.replace("\r\n", "\n").lstrip("\ufeff")
+    normalized = TIMESTAMP_PATTERN.sub("<TIMESTAMP>", normalized_text)
     return normalized.strip() + "\n"
 
 
@@ -74,7 +76,8 @@ def run_sample(repo_root: Path, sample_number: str) -> None:
 
 def main(argv: list[str]) -> int:
     repo_root = Path(__file__).resolve().parents[1]
-    sample_numbers = argv[1:] or ["2", "3", "4"]
+    # Explicit sample arguments such as `8` are supported without changing the default fast path.
+    sample_numbers = argv[1:] or DEFAULT_SAMPLE_NUMBERS
 
     try:
         for sample_number in sample_numbers:
