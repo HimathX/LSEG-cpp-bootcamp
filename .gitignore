@@ -58,3 +58,6 @@ obj/
 
 # Ignore specific learning artefact
 modules/Week-02-Basics-and-Performance/codes/main.i
+
+# VS Code
+.vscode/
