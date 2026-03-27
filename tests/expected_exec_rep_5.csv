@@ -1,6 +1,1 @@
-Order ID,Client Order ID,Instrument,Side,Exec Status,Quantity,Price,Rejected Reason,Transaction Time
-ord1,aa13,,1,1,100,55.00,Invalid instrument,<TIMESTAMP>
-ord2,aa14,Rose,3,1,100,65.00,Invalid side,<TIMESTAMP>
-ord3,aa15,Lavender,2,1,101,1.00,Invalid size,<TIMESTAMP>
-ord4,aa16,Tulip,1,1,100,-1.00,Invalid price,<TIMESTAMP>
-ord3,aa17,Orchid,1,1,1000,-1.00,Invalid size,<TIMESTAMP>
+Order ID,Client Order ID,Instrument,Side,Exec Status,Quantity,Price,Transaction Time
