@@ -1,140 +1,84 @@
-# LSEG C++ Bootcamp 2026 🚀
+# Flower Exchange Engine
 
-A comprehensive collection of materials, notes, and projects from the **LSEG High-Performance C++ Workshop** conducted over 12 weeks (January - April 2026).
+A high-performance C++ matching engine built as part of the LSEG C++ Bootcamp 2026. This project features a robust core for order matching, a Python backend server, and a modern web-based graphical user interface (GUI) for interacting with the engine.
 
-## 📋 About the Workshop
+## 🏗️ Architecture & Implementation
 
-This workshop is a collaboration between LSEG (London Stock Exchange Group) and my university, focusing on high-performance C++ programming for mission-critical applications. The program covers everything from C++ fundamentals to advanced topics like concurrent programming and design patterns.
+The repository is modularized into three main components:
 
-**Duration:** 12 weeks (Jan 29, 2026 - Apr 2026)  
-**Format:** Virtual sessions (Zoom) + Final on-site visit  
-**Schedule:** Every Thursday at 10:15 AM
+### 1. C++ Core Engine (`src/`)
+Our C++ implementation drives the high-performance matching logic. Key details include:
+- **OrderBook & Priority Matching:** Implements an ultra-fast price-time priority matching engine. Buy and sell orders are maintained efficiently in memory.
+- **CSV Data Processing:** Custom `CSVReader` and `CSVWriter` implementations for low-latency batch processing of bulk orders and execution reports.
+- **Strict Validation:** Integrated validation rules (`Validator.cpp`) ensure that malformed or unauthorized orders are instantly rejected before hitting the matching algorithms.
+- **Modern C++ Features:** Built utilizing modern C++17 features, standard template library (STL), and optimized data structures specifically tailored for throughput and minimal allocations.
 
-## 🎯 Workshop Objectives
+### 2. Python Backend (`server/`)
+A fast and lightweight REST API server built with Python, FastAPI and `uv` for modern dependency management. It operates as the secure bridge, executing the compiled C++ engine binaries and delivering instantaneous results to the web frontend.
 
-- Master C++ fundamentals and advanced features
-- Understand high-performance computing principles
-- Learn SOLID principles and design patterns
-- Gain hands-on experience with concurrent programming
-- Build a real-world C++ project
+### 3. React Web GUI (`gui/`)
+A completely modern, responsive single-page React application built with Vite and Tailwind CSS. It allows users to quickly upload order CSV files through drag-and-drop mechanics, view structured execution reports, and analyze their matching and trade statistics vividly.
 
-## 📚 Course Structure
+![Flower Exchange Engine](assets/image.png)
 
-### Week 1: Introduction to the Workshop
-- High-level company intro and tech stack
-- Introduction to high-performance computing
-- Why C++ is critical for mission-critical applications
-- Benefits of learning C++
+## 🗂️ Project Structure
 
-### Week 2: Basics of C++ & Performance
-- Compiler process and optimization levels
-- Programming fundamentals (Variables, Functions, Arrays, Control Flow)
-- Data alignment and performance considerations
-- Pointers and memory management
-- Stack vs Heap memory
-
-### Week 3: SOLID Principles & Design Patterns
-- SOLID principles overview
-- Creational design patterns
-- Structural design patterns
-- Behavioral design patterns
-- Anti-patterns to avoid
-
-### Week 4: C++ Abstract Machine
-- Classes and object-oriented design
-- Design guidelines for class design
-- Virtual functions internals
-- dynamic_cast mechanics
-- Member initialization
-- Avoiding deep hierarchies
-- Modern C++ features (Move semantics, Smart pointers)
-- STL and Boost libraries
-
-### Week 5: Object-Oriented Programming
-- Classes, Objects, and Header files
-- Access modifiers
-- Core OOP concepts:
-  - Encapsulation
-  - Abstraction
-  - Inheritance
-  - Polymorphism
-- Virtual functions and abstract classes
-
-### Week 6: Group Project Introduction
-- Project brief and requirements
-- Evaluation criteria
-- Certificate information
-
-### Week 7: High-Performance Computing
-- Introduction to concurrent programming
-- Read-Write locks
-- Deadlocks and how to avoid them
-- Concurrent modifications
-- Thread binding
-
-### Week 8-9: Project Development
-*Two-week sprint for project implementation*
-
-### Week 10-11: Project Evaluation
-*Project marking period*
-
-### Week 12: Final Presentation & Field Visit
-- Company office visit (Malabe Office)
-- Project presentations
-- Certificate ceremony
-
-## 🗂️ Repository Structure
-
-```
-├── Week-01-Introduction/
-├── Week-02-Basics-and-Performance/
-├── Week-03-SOLID-and-Design-Patterns/
-├── Week-04-CPP-Abstract-Machine/
-├── Week-05-OOP-Concepts/
-├── Week-06-Project-Introduction/
-├── Week-07-High-Performance-Computing/
-├── Week-08-09-Project-Work/
-├── Week-10-11-Project-Marking/
-├── Week-12-Final-Presentation/
-├── Resources/
-└── Practice-Exercises/
+```text
+├── src/                # C++ codebase (OrderBook, MatchingEngine, Readers/Writers)
+├── server/             # Python FastAPI backend
+├── gui/                # React, Vite & Tailwind frontend
+├── tests/              # Sample CSV orders for unit and integration testing
+├── assets/             # Project screenshots and assets
+├── QUICKSTART.md       # Detailed setup guidelines and architecture docs
+└── README.md           # This documentation file
 ```
 
-Each week folder contains:
-- 📝 Notes from lectures
-- 📊 Presentation slides
-- 💻 Code examples
-- ✍️ Practice exercises
+## 🚀 Quickstart
 
-## 🛠️ Technologies & Tools
+Follow these instructions to build the engine and run the application stack.
 
-- **Language:** C++17/20
-- **Libraries:** STL, Boost
-- **Concepts:** OOP, SOLID, Design Patterns, Concurrency
-- **Tools:** Modern C++ compilers, debugging tools
+### 1. Compile the Core Engine (C++)
 
+From the root directory, compile the C++ source code with optimal performance flags:
 
-## 📖 Resources
+```bash
+g++ -O3 -std=c++17 src/main.cpp src/CSVReader.cpp src/CSVWriter.cpp src/OrderBook.cpp src/MatchingEngine.cpp src/Validator.cpp src/OrderIDGenerator.cpp -o exchange
+```
 
-Additional learning materials, books, online courses, and useful links can be found in the [`Resources/`](./Resources/) folder.
+### 2. Server Setup (Python)
 
-## 🚀 Project
+The backend server relies on `uv`, a blazingly fast Python package installer and resolver.
 
-The final project (Week 8-9) demonstrates practical application of concepts learned throughout the workshop. Details and source code can be found in the [`Week-08-09-Project-Work/`](./Week-08-09-Project-Work/) folder.
+1. Navigate to the server directory:
+   ```bash
+   cd server
+   ```
+2. Install the required dependencies:
+   ```bash
+   uv sync
+   ```
+3. Run the backend server:
+   ```bash
+   uv run python main.py
+   ```
 
+### 3. GUI Setup (Node.js/React)
 
-## 📜 License
+The frontend is a React application built with Vite.
 
-This repository is for educational purposes. Materials are based on the LSEG C++ Workshop curriculum.
-
-## 🙏 Acknowledgments
-
-- **LSEG** for organizing this comprehensive workshop
-- Workshop instructors and mentors
-- Fellow participants in the program
+1. Navigate to the GUI directory:
+   ```bash
+   cd gui
+   ```
+2. Install the required dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
+   *(The application will instantly reflect changes and is typically available at `http://localhost:5173`)*
 
 ---
-
-*Last Updated: February 2026*
-
-**Note:** This is a living document and will be updated throughout the workshop as new materials are added.
+*Developed as the final project for the LSEG C++ Bootcamp 2026.*
