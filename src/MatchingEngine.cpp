@@ -1,23 +1,21 @@
 #include "MatchingEngine.h"
+#include <algorithm>
 #include <stdexcept>
-#include <algorithm> // For std::min
 #include "OrderIDGenerator.h"
 
 MatchingEngine::MatchingEngine(const std::string &engineName)
-    : engine_(engineName)
+    : engine_(engineName),
+      orderBooks_{OrderBook("Rose"),
+                  OrderBook("Lavender"),
+                  OrderBook("Lotus"),
+                  OrderBook("Tulip"),
+                  OrderBook("Orchid")}
 {
-    orderBooks_.emplace("Rose", OrderBook("Rose"));
-    orderBooks_.emplace("Lavender", OrderBook("Lavender"));
-    orderBooks_.emplace("Lotus", OrderBook("Lotus"));
-    orderBooks_.emplace("Tulip", OrderBook("Tulip"));
-    orderBooks_.emplace("Orchid", OrderBook("Orchid"));
 }
 
-std::vector<ExecutionReport> MatchingEngine::MatchOrder(const Order &orderInput)
+void MatchingEngine::matchOrder(Order order, std::vector<ExecutionReport>& outReports)
 {
-    Order order = orderInput;
-    std::vector<ExecutionReport> reports;
-    OrderBook &orderBook = getOrderBook(order.instrument);
+    OrderBook &orderBook = getOrderBook(order.instrumentId);
 
     // 1. Generate the System ID immediately
     order.orderID = OrderIDGenerator::getNext();
@@ -28,19 +26,13 @@ std::vector<ExecutionReport> MatchingEngine::MatchOrder(const Order &orderInput)
     while (order.quantity > 0 && oppositeSideHasOrders)
     {
         // Get the best available resting order
-        std::queue<Order> &bestQueue = (order.side == 1) ? orderBook.getBestSellQueue() : orderBook.getBestBuyQueue();
-        Order &restingOrder = bestQueue.front();
+        std::deque<RestingOrder> &bestQueue = (order.side == 1) ? orderBook.getBestSellQueue() : orderBook.getBestBuyQueue();
+        RestingOrder &restingOrder = bestQueue.front();
 
         // Check if prices actually overlap
-        bool priceMatches = false;
-        if (order.side == 1)
-        {
-            priceMatches = (order.price >= restingOrder.price); // Buyer pays >= cheapest sell price
-        }
-        else
-        {
-            priceMatches = (order.price <= restingOrder.price); // Seller sells <= highest buy price
-        }
+        const bool priceMatches =
+            (order.side == 1) ? (order.priceTick >= restingOrder.priceTick)
+                              : (order.priceTick <= restingOrder.priceTick);
 
         isAggressive = isAggressive || priceMatches; // Once we have a price match, we consider the order aggressive
 
@@ -52,7 +44,7 @@ std::vector<ExecutionReport> MatchingEngine::MatchOrder(const Order &orderInput)
         // --- WE HAVE A MATCH ---
 
         int tradeQty = std::min(order.quantity, restingOrder.quantity);
-        double executionPrice = restingOrder.price; // THE EXAMPLE 5 RULE
+        double executionPrice = priceTickToPrice(restingOrder.priceTick); // THE EXAMPLE 5 RULE
 
         // Update quantities
         restingOrder.quantity -= tradeQty;
@@ -61,32 +53,28 @@ std::vector<ExecutionReport> MatchingEngine::MatchOrder(const Order &orderInput)
         int restingStatus = (restingOrder.quantity == 0) ? 2 : 3; // 2=Fill, 3=PFill
         int aggressiveStatus = (order.quantity == 0) ? 2 : 3;
 
-        // Report for AGGRESSIVE Order
-        ExecutionReport aggressiveReport;
-        aggressiveReport.orderID = order.orderID;
-        aggressiveReport.clientOrderID = order.clientOrderID;
-        aggressiveReport.instrument = order.instrument;
-        aggressiveReport.side = order.side;
-        aggressiveReport.status = aggressiveStatus;
-        aggressiveReport.quantity = tradeQty;
-        aggressiveReport.price = executionPrice;
-        reports.push_back(aggressiveReport);
+        appendReport(outReports,
+                     order.orderID,
+                     order.clientOrderID,
+                     order.instrument,
+                     order.side,
+                     aggressiveStatus,
+                     tradeQty,
+                     executionPrice);
 
-        // Report for RESTING Order
-        ExecutionReport restingReport;
-        restingReport.orderID = restingOrder.orderID;
-        restingReport.clientOrderID = restingOrder.clientOrderID;
-        restingReport.instrument = restingOrder.instrument;
-        restingReport.side = restingOrder.side;
-        restingReport.status = restingStatus;
-        restingReport.quantity = tradeQty;
-        restingReport.price = executionPrice;
-        reports.push_back(restingReport);
+        appendReport(outReports,
+                     restingOrder.orderID,
+                     restingOrder.clientOrderID,
+                     order.instrument,
+                     (order.side == 1) ? 2 : 1,
+                     restingStatus,
+                     tradeQty,
+                     executionPrice);
 
         // Clean up empty resting order
         if (restingOrder.quantity == 0)
         {
-            bestQueue.pop();
+            bestQueue.pop_front();
             orderBook.removeEmptyPriceLevels();
         }
 
@@ -101,28 +89,44 @@ std::vector<ExecutionReport> MatchingEngine::MatchOrder(const Order &orderInput)
         orderBook.addOrder(order);
         if (!isAggressive)
         {
-            ExecutionReport newReport;
-            newReport.orderID = order.orderID;
-            newReport.clientOrderID = order.clientOrderID;
-            newReport.instrument = order.instrument;
-            newReport.side = order.side;
-            newReport.status = 0; // 0 - New
-            newReport.quantity = order.quantity;
-            newReport.price = order.price;
-            reports.push_back(newReport);
+            appendReport(outReports,
+                         order.orderID,
+                         order.clientOrderID,
+                         order.instrument,
+                         order.side,
+                         0,
+                         order.quantity,
+                         order.price);
         }
-        
     }
-
-    return reports;
 }
 
-OrderBook &MatchingEngine::getOrderBook(const std::string &instrument)
+OrderBook &MatchingEngine::getOrderBook(InstrumentId instrumentId)
 {
-    auto it = orderBooks_.find(instrument);
-    if (it == orderBooks_.end())
+    const int index = static_cast<int>(instrumentId);
+    if (index < 0 || index >= static_cast<int>(orderBooks_.size()))
     {
-        throw std::invalid_argument("Unknown instrument: " + instrument);
+        throw std::invalid_argument("Unknown instrument");
     }
-    return it->second;
+    return orderBooks_[static_cast<std::size_t>(index)];
+}
+
+void MatchingEngine::appendReport(std::vector<ExecutionReport>& outReports,
+                                  const std::string& orderID,
+                                  const std::string& clientOrderID,
+                                  const std::string& instrument,
+                                  int side,
+                                  int status,
+                                  int quantity,
+                                  double price) const
+{
+    ExecutionReport report;
+    report.orderID = orderID;
+    report.clientOrderID = clientOrderID;
+    report.instrument = instrument;
+    report.side = side;
+    report.status = status;
+    report.quantity = quantity;
+    report.price = price;
+    outReports.push_back(report);
 }

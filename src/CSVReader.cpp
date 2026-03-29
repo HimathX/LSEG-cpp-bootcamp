@@ -166,9 +166,11 @@ Order CSVReader::parseOrder(const std::vector<std::string> &fields, std::uint64_
 
     order.clientOrderID = fields[0];
     order.instrument = fields[1];
+    order.instrumentId = stringToInstrumentId(fields[1]);  // Cache enum for fast comparisons
     order.side = side;
     order.quantity = quantity;
     order.price = price;
+    order.priceTick = priceToPriceTick(price);  // Cache as integer cents
     order.seqNo = static_cast<int>(seqNum);
 
     return order;

@@ -1,6 +1,6 @@
 #pragma once
+#include <array>
 #include <string>
-#include <map>
 #include <vector>
 #include "Order.h"
 #include "OrderBook.h"
@@ -10,11 +10,19 @@ class MatchingEngine {
 public:
     explicit MatchingEngine(const std::string& engineName);
 
-    std::vector<ExecutionReport> MatchOrder(const Order& order);
+    void matchOrder(Order order, std::vector<ExecutionReport>& outReports);
 
 private:
-    OrderBook& getOrderBook(const std::string& instrument);
+    OrderBook& getOrderBook(InstrumentId instrumentId);
+    void appendReport(std::vector<ExecutionReport>& outReports,
+                      const std::string& orderID,
+                      const std::string& clientOrderID,
+                      const std::string& instrument,
+                      int side,
+                      int status,
+                      int quantity,
+                      double price) const;
 
     std::string engine_;
-    std::map<std::string, OrderBook> orderBooks_;
+    std::array<OrderBook, 5> orderBooks_;
 };
