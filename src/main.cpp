@@ -134,6 +134,7 @@ int main(int argc, char* argv[])
     int processedCount = 0;
     int rejectCount = 0;
     int validOrderCount = 0;
+    std::vector<ExecutionReport> matchReports;
 
     // Process the chronological timeline
     for (const auto& ev : timeline)
@@ -149,7 +150,8 @@ int main(int argc, char* argv[])
             const Order& order = ev.validOrder;
 
             // The order is 100% valid. Send it to the order book.
-            std::vector<ExecutionReport> matchReports = engine.MatchOrder(order);
+            matchReports.clear();
+            engine.matchOrder(order, matchReports);
 
             for (const auto& rep : matchReports)
             {

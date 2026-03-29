@@ -1,4 +1,5 @@
 #pragma once
+#include <cmath>
 #include <string>
 
 // Enum for the 5 valid instruments (cheaper than string comparisons)
@@ -12,6 +13,7 @@ enum class InstrumentId : int {
 
 // Price as integer cents (e.g., 55.50 -> 5550)
 using PriceTick = int;
+constexpr PriceTick PRICE_SCALE = 100;
 
 // Helper to convert instrument string to enum (returns -1 if invalid)
 inline InstrumentId stringToInstrumentId(const std::string& instrument) {
@@ -37,12 +39,12 @@ inline std::string instrumentIdToString(InstrumentId id) {
 
 // Helper to convert price double to PriceTick (cents)
 inline PriceTick priceToPriceTick(double price) {
-    return static_cast<PriceTick>(price * 100.0);
+    return static_cast<PriceTick>(std::llround(price * PRICE_SCALE));
 }
 
 // Helper to convert PriceTick back to price double
 inline double priceTickToPrice(PriceTick tick) {
-    return static_cast<double>(tick) / 100.0;
+    return static_cast<double>(tick) / PRICE_SCALE;
 }
 
 // Minimal resting order in the order book (saves memory)
