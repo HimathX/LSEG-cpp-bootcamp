@@ -3,7 +3,7 @@
 #include <algorithm> // For std::min
 #include "OrderIDGenerator.h"
 
-MatchingEngine::MatchingEngine(const std::string &engineName)
+ MatchingEngine::MatchingEngine(const std::string &engineName)
     : engine_(engineName)
 {
     orderBooks_.emplace("Rose", OrderBook("Rose"));
@@ -28,18 +28,21 @@ std::vector<ExecutionReport> MatchingEngine::MatchOrder(const Order &orderInput)
     while (order.quantity > 0 && oppositeSideHasOrders)
     {
         // Get the best available resting order
-        std::queue<Order> &bestQueue = (order.side == 1) ? orderBook.getBestSellQueue() : orderBook.getBestBuyQueue();
-        Order &restingOrder = bestQueue.front();
+        std::deque<RestingOrder> &bestQueue = (order.side == 1) ? orderBook.getBestSellQueue() : orderBook.getBestBuyQueue();
+        RestingOrder &restingOrder = bestQueue.front();
+
+        // Convert PriceTick back to double for price matching
+        double restingPrice = priceTickToPrice(restingOrder.priceTick);
 
         // Check if prices actually overlap
         bool priceMatches = false;
         if (order.side == 1)
         {
-            priceMatches = (order.price >= restingOrder.price); // Buyer pays >= cheapest sell price
+            priceMatches = (order.price >= restingPrice); // Buyer pays >= cheapest sell price
         }
         else
         {
-            priceMatches = (order.price <= restingOrder.price); // Seller sells <= highest buy price
+            priceMatches = (order.price <= restingPrice); // Seller sells <= highest buy price
         }
 
         isAggressive = isAggressive || priceMatches; // Once we have a price match, we consider the order aggressive
@@ -52,7 +55,7 @@ std::vector<ExecutionReport> MatchingEngine::MatchOrder(const Order &orderInput)
         // --- WE HAVE A MATCH ---
 
         int tradeQty = std::min(order.quantity, restingOrder.quantity);
-        double executionPrice = restingOrder.price; // THE EXAMPLE 5 RULE
+        double executionPrice = restingPrice; // THE EXAMPLE 5 RULE
 
         // Update quantities
         restingOrder.quantity -= tradeQty;
@@ -76,8 +79,8 @@ std::vector<ExecutionReport> MatchingEngine::MatchOrder(const Order &orderInput)
         ExecutionReport restingReport;
         restingReport.orderID = restingOrder.orderID;
         restingReport.clientOrderID = restingOrder.clientOrderID;
-        restingReport.instrument = restingOrder.instrument;
-        restingReport.side = restingOrder.side;
+        restingReport.instrument = order.instrument;
+        restingReport.side = (order.side == 1) ? 2 : 1; // Opposite side
         restingReport.status = restingStatus;
         restingReport.quantity = tradeQty;
         restingReport.price = executionPrice;
@@ -86,7 +89,7 @@ std::vector<ExecutionReport> MatchingEngine::MatchOrder(const Order &orderInput)
         // Clean up empty resting order
         if (restingOrder.quantity == 0)
         {
-            bestQueue.pop();
+            bestQueue.pop_front();
             orderBook.removeEmptyPriceLevels();
         }
 
@@ -111,7 +114,7 @@ std::vector<ExecutionReport> MatchingEngine::MatchOrder(const Order &orderInput)
             newReport.price = order.price;
             reports.push_back(newReport);
         }
-        
+
     }
 
     return reports;

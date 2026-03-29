@@ -39,7 +39,7 @@ namespace
         return report;
     }
 
-    RejectedExecutionReport buildValidationRejectReport(const Order &order, const std::string &reason)
+    RejectedExecutionReport buildValidationRejectReport(const Order &order, const std::string_view reason)
     {
         RejectedExecutionReport report;
         report.orderID = OrderIDGenerator::getNext();
@@ -49,7 +49,7 @@ namespace
         report.quantity = order.quantity;
         report.price = order.price;
         report.status = 1; // 1 - Rejected
-        report.rejectedReason = reason;
+        report.rejectedReason = std::string(reason);
         return report;
     }
 
@@ -67,7 +67,7 @@ namespace
             return buildValidationRejectReport(order, "Extra field");
         }
 
-        const std::string reason = Validator::validate(order);
+        const std::string_view reason = Validator::validate(order);
 
         if (!reason.empty())
         {

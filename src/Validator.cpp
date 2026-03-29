@@ -1,12 +1,8 @@
 #include "Validator.h"
-#include <unordered_set>
 
-static const std::unordered_set<std::string> VALID_INSTRUMENTS = {
-    "Rose", "Lavender", "Lotus", "Tulip", "Orchid"};
-
-std::string Validator::validate(const Order &order)
+std::string_view Validator::validate(const Order &order)
 {
-    if (VALID_INSTRUMENTS.find(order.instrument) == VALID_INSTRUMENTS.end())
+    if (order.instrumentId == static_cast<InstrumentId>(-1))
     {
         return "Invalid instrument";
     }

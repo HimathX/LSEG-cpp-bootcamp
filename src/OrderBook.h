@@ -2,7 +2,7 @@
 
 #include <string>
 #include <map>
-#include <queue>
+#include <deque>
 #include "Order.h"
 
 class OrderBook
@@ -18,9 +18,9 @@ public:
     bool hasBuyOrders() const;
     bool hasSellOrders() const;
 
-    // Retrieve the queue of orders at the absolute best available price
-    std::queue<Order>& getBestBuyQueue();
-    std::queue<Order>& getBestSellQueue();
+    // Retrieve the deque of resting orders at the absolute best available price
+    std::deque<RestingOrder>& getBestBuyQueue();
+    std::deque<RestingOrder>& getBestSellQueue();
 
     // Clean up empty price levels after orders are fully filled
     void removeEmptyPriceLevels();
@@ -28,11 +28,11 @@ public:
 private:
     std::string instrument_;
 
-    // BUY SIDE: std::greater<double> sorts from highest price to lowest price.
+    // BUY SIDE: std::greater<PriceTick> sorts from highest price to lowest price.
     // The highest buy price is the most aggressive, so it sits at the top (.begin())
-    std::map<double, std::queue<Order>, std::greater<double>> buySide_;
+    std::map<PriceTick, std::deque<RestingOrder>, std::greater<PriceTick>> buySide_;
 
-    // SELL SIDE: std::less<double> sorts from lowest price to highest price.
+    // SELL SIDE: std::less<PriceTick> sorts from lowest price to highest price.
     // The lowest sell price is the most aggressive, so it sits at the top (.begin())
-    std::map<double, std::queue<Order>, std::less<double>> sellSide_;
+    std::map<PriceTick, std::deque<RestingOrder>, std::less<PriceTick>> sellSide_;
 };
